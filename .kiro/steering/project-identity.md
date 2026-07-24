@@ -1,294 +1,124 @@
 # Project Identity
 
-> **Open Career Profile** is the official identity document for the project.
->
-> This document is the highest-priority source of truth for every AI agent working on this repository.
->
-> If any Steering document, Spec, Design or Task contradicts this file, this file always takes precedence.
+> Highest authority document in this repository.
+> If any other document contradicts this file, this file wins.
 
 ---
 
-# Project Information
+## Project Information
 
 | Property | Value |
 |----------|-------|
-| Project Name | Open Career Profile |
-| Repository | open-career-profile |
+| Name | Open Career Profile |
 | License | Apache License 2.0 |
-| Project Type | Open Source |
-| Status | Architecture Phase |
-| Development Model | AI Assisted Development |
-| Repository Strategy | Monorepo |
+| Type | Open Source |
+| Phase | Planning |
+| Development Model | AI Assisted |
+| Repository | Monorepo |
 
 ---
 
-# Project Mission
+## Mission
 
-Open Career Profile is an Open Source platform that allows any person to build, maintain and evolve a professional career profile locally and privately.
-
-The system does NOT manage resumes.
+Open Career Profile is an Open Source platform that allows any person to build, maintain and evolve a Professional Profile locally and privately.
 
 The system manages professional information.
-
 A Resume (CV) is only one possible output generated from the Professional Profile.
 
 ---
 
-# Long-Term Vision
+## Core Principles
 
-Build the world's most extensible Open Source Professional Profile platform.
-
-The architecture must allow the community to create:
-
-- CV templates
-- Institution-specific formats
-- Government formats
-- Professional portfolios
-- Academic profiles
-- Digital professional records
-- Future integrations
-
-without modifying the application core.
+1. **Privacy First** — Personal information belongs to the user. No cloud dependency. Everything works locally.
+2. **Offline First** — Works without internet. Cloud sync may exist in the future but always optional.
+3. **Single Source of Truth** — The Professional Profile is the only permanent source. Generated documents are never the source.
+4. **Evidence Driven** — Information should be traceable to its original document when possible.
+5. **AI Assisted** — AI is optional. The system works fully without it. AI only improves productivity.
+6. **Plugin First** — OCR, AI, render engines, validation, templates — all replaceable through plugins/adapters.
+7. **Open Source First** — Favor transparency, documentation and community contributions.
 
 ---
 
-# Core Principles
+## Approved Technologies
 
-## Privacy First
+Changes require an ADR.
 
-Personal information belongs to the user.
-
-No cloud dependency is required.
-
-Everything must work locally.
-
----
-
-## Offline First
-
-The application must continue working without Internet access.
-
-Cloud synchronization may exist in the future but must always remain optional.
+| Layer | Technology |
+|-------|-----------|
+| Backend | Express.js, TypeScript |
+| Database | PostgreSQL, Docker, Prisma ORM |
+| Frontend | React, Vite |
+| OCR | Tesseract.js |
+| AI (optional) | Ollama |
+| PDF | Puppeteer |
+| VCS | Git, GitHub |
 
 ---
 
-## Single Source of Truth
+## Architectural Rules
 
-The Professional Profile is the only permanent source of information.
-
-Generated documents must never become the source of truth.
-
----
-
-## Evidence Driven
-
-Every piece of information stored in the profile should be traceable to its original document whenever possible.
+- Architecture must remain modular.
+- Business logic must never be coupled to: OCR, Database, AI, Templates, UI.
+- Every external dependency must be replaceable.
+- The domain is the most stable layer.
 
 ---
 
-## AI Assisted
+## Boundaries
 
-Artificial Intelligence is optional.
+### This project IS
 
-The system must remain fully functional without AI.
+- Professional Profile Manager
+- Local-first Application
+- Open Source Platform
+- Extensible (Plugin-based)
+- AI Assisted (optional)
+- Privacy-focused
 
-AI exists only to improve productivity.
+### This project IS NOT
 
----
-
-## Plugin First
-
-The system must be extensible.
-
-OCR engines
-
-AI providers
-
-Render engines
-
-Validation engines
-
-Institution rules
-
-Templates
-
-must all be replaceable through plugins or adapters.
+- A Resume Builder
+- A SaaS Platform
+- A Cloud-only Application
+- An AI-dependent Product
+- Vendor Locked
 
 ---
 
-## Open Source First
+## AI Agent Rules
 
-Every architectural decision should favor transparency, documentation and community contributions.
-
----
-
-# Official Technology Decisions
-
-These technologies are officially approved.
-
-AI agents must NOT replace them without an approved ADR.
-
-## Backend
-
-Express.js
-
-TypeScript
+1. Never replace approved technologies without an ADR.
+2. Never implement business logic before an approved Spec.
+3. Never introduce unapproved frameworks.
+4. Never duplicate the source of truth.
+5. Preserve backward compatibility when possible.
+6. Favor modularity over convenience.
+7. Prefer interfaces over implementations.
+8. Every architectural decision requires documentation.
+9. If uncertain, stop and ask.
+10. When any change occurs, synchronize affected documentation.
 
 ---
 
-## Database
+## Documentation Hierarchy
 
-PostgreSQL
-
-Docker
-
-Prisma ORM
-
----
-
-## Frontend
-
-React
-
-Vite
+| Level | Documents |
+|-------|-----------|
+| 1 — Identity | This file (absolute authority) |
+| 2 — Steering | architecture.md, tech-stack.md, development-rules.md |
+| 3 — Decisions & Specs | project/decisions/, project/specs/ |
+| 4 — Status | PROJECT_STATUS.md |
 
 ---
 
-## OCR
-
-Tesseract.js
-
-Future providers may be added through adapters.
-
----
-
-## Artificial Intelligence
-
-Ollama
-
-Optional only.
-
-The application must never depend on AI.
-
----
-
-## PDF Generation
-
-Puppeteer
-
----
-
-## Version Control
-
-Git
-
-GitHub
-
----
-
-# Architectural Rules
-
-The architecture must remain modular.
-
-Business logic must never be coupled to:
-
-- OCR
-- Database
-- AI
-- Templates
-- UI
-
-Every external dependency must be replaceable.
-
----
-
-# What this project IS
-
-✔ Professional Profile Manager
-
-✔ Local-first Application
-
-✔ Open Source Platform
-
-✔ Extensible Architecture
-
-✔ Plugin-based Platform
-
-✔ AI Assisted
-
-✔ Privacy-focused
-
-✔ Community Driven
-
----
-
-# What this project IS NOT
-
-✘ Resume Builder
-
-✘ SaaS Platform
-
-✘ Cloud-only Application
-
-✘ AI-dependent Product
-
-✘ Vendor Locked
-
----
-
-# AI Agent Rules
-
-Every AI agent working on this repository must follow these rules.
-
-1.
-
-Never replace approved technologies.
-
-2.
-
-Never redesign the architecture without an ADR.
-
-3.
-
-Never implement business logic before an approved Spec.
-
-4.
-
-Never introduce frameworks not officially approved.
-
-5.
-
-Never duplicate the source of truth.
-
-6.
-
-Always preserve backward compatibility whenever possible.
-
-7.
-
-Favor modularity over convenience.
-
-8.
-
-Prefer interfaces over implementations.
-
-9.
-
-Every important architectural decision requires documentation.
-
-10.
-
-If uncertain, stop and ask instead of assuming.
-
----
-
-# Current Phase
-
-Current Phase:
-
-Architecture Definition
-
-No implementation should begin before the architecture is approved.
+## Context Loading (for AI agents)
+
+Read in this order at session start:
+1. `.kiro/steering/project-identity.md`
+2. `project/context/PROJECT_STATUS.md`
+3. `.kiro/steering/` (remaining files)
+4. `project/decisions/` (if any ADRs exist)
+5. Active Spec (if working on one)
 
 ---
 
