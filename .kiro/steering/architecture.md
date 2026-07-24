@@ -1,55 +1,55 @@
-# Architecture Principles
+# Principios de Arquitectura
 
-> Permanent constraints. Changes require an ADR.
+> Restricciones permanentes. Cambios requieren un ADR.
 
 ---
 
 ## Offline First
 
-No core workflow requires network connectivity.
+Ningún flujo core requiere conectividad de red.
 
 ## Privacy First
 
-All processing happens locally. Data never leaves the machine without explicit user action.
+Todo el procesamiento ocurre localmente. Los datos nunca salen de la máquina sin acción explícita del usuario.
 
-## Local Processing
+## Procesamiento Local
 
-The entire stack runs on the user's machine.
+Todo el stack se ejecuta en la máquina del usuario.
 
 ## Domain First
 
-The Professional Profile is the central concept. Architecture revolves around the domain, not infrastructure.
+El Perfil Profesional es el concepto central. La arquitectura gira alrededor del dominio, no de la infraestructura.
 
 ## Ports & Adapters
 
-Business logic defines interfaces (ports). Concrete implementations (adapters) satisfy those contracts. Business logic never imports infrastructure directly.
+La lógica de negocio define interfaces (ports). Las implementaciones concretas (adapters) satisfacen esos contratos. La lógica de negocio nunca importa infraestructura directamente.
 
-## Plugin Architecture
+## Arquitectura de Plugins
 
-Extensions via plugins/adapters. The following are replaceable:
-- OCR engines
-- AI providers
-- Render engines
-- Validation engines
+Extensiones mediante plugins/adaptadores. Los siguientes son reemplazables:
+- Motores de OCR
+- Proveedores de IA
+- Motores de renderizado
+- Motores de validación
 - Templates
 
 ## Single Source of Truth
 
-The Professional Profile is the only permanent data. Outputs are derived and disposable.
+El Perfil Profesional es el único dato permanente. Los outputs son derivados y descartables.
 
-## Modular Monorepo
+## Monorepo Modular
 
-Clear separation of responsibilities. Explicit dependencies between packages.
-
----
-
-## Dependency Rules
-
-- Apps never import from other apps.
-- Plugins never import from apps.
-- Core never imports concrete implementations.
-- No circular dependencies.
+Separación clara de responsabilidades. Dependencias explícitas entre paquetes.
 
 ---
 
-# End of Document
+## Reglas de Dependencias
+
+- Las apps nunca importan de otras apps.
+- Los plugins nunca importan de apps.
+- El core nunca importa implementaciones concretas.
+- Sin dependencias circulares.
+
+---
+
+# Fin del Documento

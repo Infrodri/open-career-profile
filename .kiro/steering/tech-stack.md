@@ -1,50 +1,63 @@
-# Technology Stack
+# Stack Tecnológico
 
-> Approved technologies. Changes require an ADR.
+> Tecnologías aprobadas. Cambios requieren un ADR.
 
 ---
 
 ## Core
 
-| Technology | Role |
-|-----------|------|
-| TypeScript | Language (strict mode) |
-| Node.js 20+ | Runtime |
+| Tecnología | Rol |
+|-----------|-----|
+| TypeScript | Lenguaje (strict mode) |
+| Node.js 22 LTS | Runtime principal |
 
 ## Backend
 
-| Technology | Role |
-|-----------|------|
-| Express.js | HTTP framework |
-| Prisma ORM | Database access, migrations |
-| PostgreSQL | Primary database |
-| Docker | Local containerization |
+| Tecnología | Rol |
+|-----------|-----|
+| Fastify | Framework HTTP (ligero, rápido, plugin system nativo) |
+| Prisma ORM | Acceso a base de datos, schema y migraciones |
+| PostgreSQL | Base de datos relacional principal |
+| Zod | Validación de schemas y parsing de DTOs |
+| Docker | Containerización local y paridad de entornos |
 
 ## Frontend
 
-| Technology | Role |
-|-----------|------|
-| React | UI library |
-| Vite | Build tool, dev server |
+| Tecnología | Rol |
+|-----------|-----|
+| React 19 | Librería de UI |
+| Vite | Build tool y servidor de desarrollo |
+| TanStack Query | Manejo de estado asíncrono y cache de datos del servidor |
+| Tailwind CSS | Framework de estilos utility-first |
 
-## Processing
+## Procesamiento
 
-| Technology | Role |
-|-----------|------|
-| Tesseract.js | OCR (via adapter) |
-| Ollama | AI assistance (optional, via adapter) |
-| Puppeteer | PDF generation (via adapter) |
+| Tecnología | Rol |
+|-----------|-----|
+| Tesseract.js | OCR (mediante adaptador) |
+| Ollama | Asistencia IA local (opcional, mediante adaptador) |
+| Puppeteer | Generación de PDF (mediante adaptador) |
 
-## Tooling
+## Tooling e Infraestructura
 
-| Technology | Role |
-|-----------|------|
-| pnpm | Package manager |
-| Turborepo | Monorepo orchestration |
-| Vitest | Testing |
-| ESLint + Prettier | Code quality |
-| Git + GitHub | Version control, CI/CD |
+| Tecnología | Rol |
+|-----------|-----|
+| pnpm | Package manager (workspace engine) |
+| Turborepo | Build system de monorepo y ejecución de tareas |
+| Vitest | Testing unitario e integración |
+| Playwright | Testing end-to-end (E2E) |
+| ESLint + Prettier | Linting, formateo y calidad de código |
+| GitHub Actions | Pipelines de CI/CD automatizados |
 
 ---
 
-# End of Document
+## Justificación de la elección
+
+- **Un solo lenguaje (TypeScript)** en todo el stack: simplifica tooling, monorepo, plugins y trabajo con AI.
+- **Fastify sobre Express**: más rápido, soporte nativo de schemas, plugin system robusto, sin la complejidad de NestJS.
+- **Sin Redis**: para mantener la promesa local-first sin infraestructura adicional.
+- **Todo gratuito y open source**: licencias MIT/Apache compatibles con Apache 2.0.
+
+---
+
+# Fin del Documento

@@ -1,111 +1,111 @@
 # Open Career Profile
 
-Open Source platform to build, manage and maintain a Professional Profile as a single source of verifiable information — locally and privately.
+Plataforma Open Source para construir, gestionar y mantener un Perfil Profesional como fuente única de información verificable — de forma local y privada.
 
 ---
 
-## What is this?
+## ¿Qué es esto?
 
-Open Career Profile allows any person to build a **Master Professional Profile** that acts as the single source of truth for all their career information.
+Open Career Profile permite a cualquier persona construir un **Perfil Profesional Maestro** que actúa como la única fuente de verdad de toda su información de carrera.
 
-From this profile, different documents can be generated (CVs, portfolios, institutional formats) without re-entering information.
+A partir de este perfil se pueden generar diferentes documentos (CVs, portfolios, formatos institucionales) sin volver a ingresar la información.
 
-The system also allows incorporating new information by uploading documents, certificates or images, automatically extracting relevant data for the user to validate before storing.
-
----
-
-## Problem
-
-Professional information is scattered across multiple documents: IDs, academic degrees, certificates, contracts, old resumes, PDFs, photos. Every new application requires gathering this information again, verifying dates, filling forms, and adapting content to different formats.
+El sistema también permite incorporar nueva información mediante la carga de documentos, certificados o imágenes, extrayendo automáticamente los datos relevantes para que el usuario únicamente valide antes de almacenar.
 
 ---
 
-## Solution
+## Problema
 
-A **Master Professional Profile** as the only source of truth. Generate any document from it. Never recreate information manually again.
-
----
-
-## Principles
-
-- **Open Source** — public project, community contributions welcome
-- **Local First** — all information stays on the user's computer
-- **Offline First** — works completely without internet
-- **Privacy First** — personal documents never sent to external services
-- **Single Source of Truth** — the Profile is the only official source
-- **AI Assisted** — AI is optional, improves productivity, never required
-- **Plugin First** — modular and extensible architecture
+La información profesional está dispersa en múltiples documentos: cédulas, títulos académicos, certificados, contratos, hojas de vida antiguas, PDFs, fotos. Cada nueva postulación requiere recopilar esa información nuevamente, verificar fechas, llenar formularios y adaptar el contenido a diferentes formatos.
 
 ---
 
-## Scope
+## Solución
 
-The system manages:
-
-- Personal information
-- Education and academic background
-- Work experience
-- Certifications
-- Courses
-- Languages
-- Skills
-- References
-- Supporting documents
-- Professional evidence
+Un **Perfil Profesional Maestro** como única fuente de verdad. Genera cualquier documento a partir de él. Nunca más recrear información manualmente.
 
 ---
 
-## System Flow
+## Principios
+
+- **Open Source** — proyecto público, contribuciones bienvenidas
+- **Local First** — toda la información queda en la computadora del usuario
+- **Offline First** — funciona completamente sin internet
+- **Privacy First** — los documentos personales nunca se envían a servicios externos
+- **Single Source of Truth** — el Perfil es la única fuente oficial
+- **AI Assisted** — la IA es opcional, mejora la productividad, nunca es requerida
+- **Plugin First** — arquitectura modular y extensible
+
+---
+
+## Alcance
+
+El sistema administra:
+
+- Información personal
+- Formación académica
+- Experiencia laboral
+- Certificaciones
+- Cursos
+- Idiomas
+- Habilidades
+- Referencias
+- Documentos de respaldo
+- Evidencias profesionales
+
+---
+
+## Flujo del Sistema
 
 ```
-User
+Usuario
  ↓
-Upload documents
+Carga documentos
  ↓
-Processing (OCR extraction)
+Procesamiento (extracción OCR)
  ↓
-User validates extracted data
+Usuario valida datos extraídos
  ↓
-Professional Profile updated
+Perfil Profesional actualizado
  ↓
-Generate required document (CV, portfolio, institutional format)
+Genera documento requerido (CV, portfolio, formato institucional)
 ```
 
 ---
 
-## Technology
+## Tecnología
 
-| Layer | Technology |
-|-------|-----------|
-| Backend | Node.js, Express, TypeScript |
-| Database | PostgreSQL, Prisma ORM, Docker |
-| Frontend | React, Vite |
+| Capa | Tecnología |
+|------|-----------|
+| Backend | Fastify, TypeScript, Node.js 22 |
+| Base de datos | PostgreSQL, Prisma ORM, Docker |
+| Frontend | React 19, Vite, Tailwind CSS |
 | OCR | Tesseract.js |
-| AI (optional) | Ollama |
-| PDF Generation | Puppeteer |
-| Version Control | Git, GitHub |
+| IA (opcional) | Ollama |
+| PDF | Puppeteer |
+| Control de versiones | Git, GitHub |
 
 ---
 
-## Expected Result
+## Resultado Esperado
 
-Any user can:
+Cualquier usuario puede:
 
-1. Create their Professional Profile.
-2. Add information via documents or forms.
-3. Validate automatically extracted data.
-4. Keep their profile updated.
-5. Generate different professional documents from the same profile.
-6. Keep all information private and local.
-
----
-
-## Current Phase
-
-**Planning** — architecture approved, preparing first functional specification.
+1. Crear su Perfil Profesional.
+2. Incorporar información mediante documentos o formularios.
+3. Validar la información extraída automáticamente.
+4. Mantener actualizado su perfil.
+5. Generar distintos documentos profesionales a partir del mismo perfil.
+6. Conservar toda su información de manera privada y local.
 
 ---
 
-## License
+## Fase Actual
+
+**Planning** — arquitectura aprobada, preparando primera especificación funcional.
+
+---
+
+## Licencia
 
 Apache License 2.0

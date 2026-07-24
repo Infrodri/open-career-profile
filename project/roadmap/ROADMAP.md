@@ -2,89 +2,89 @@
 
 ---
 
-## Phase 1 — Consolidation (current)
+## Fase 1 — Consolidación (actual)
 
-- Review and approve base documentation.
-- Confirm architecture and technology stack.
-- Prepare repository for development.
-- Establish Spec workflow.
-
----
-
-## Phase 2 — Foundation
-
-First Spec: the domain model (Professional Profile data structure).
-
-- Define entities, relationships, and invariants.
-- Implement core domain package.
-- Set up monorepo tooling (pnpm, TypeScript, ESLint, Vitest).
+- Revisar y aprobar documentación base.
+- Confirmar arquitectura y stack tecnológico.
+- Preparar repositorio para desarrollo.
+- Establecer flujo de trabajo con Specs.
 
 ---
 
-## Phase 3 — Core
+## Fase 2 — Foundation
 
-Specs for core functionality:
+Primer Spec: el modelo de dominio (estructura de datos del Perfil Profesional).
 
-- Profile CRUD (create, read, update, delete).
-- Profile sections management.
-- Source documents and evidence linking.
-- Persistence layer (PostgreSQL + Prisma).
-- Basic API (Express).
+- Definir entidades, relaciones e invariantes.
+- Implementar paquete core del dominio.
+- Configurar tooling del monorepo (pnpm, TypeScript, ESLint, Vitest).
 
 ---
 
-## Phase 4 — Output
+## Fase 3 — Core
 
-Specs for document generation:
+Specs para funcionalidad central:
 
-- Template system design.
-- Output engine (Profile data → HTML → PDF via Puppeteer).
-- At least 2 templates (standard CV, minimal CV).
-
----
-
-## Phase 5 — Enhancement
-
-Specs for optional and advanced features:
-
-- OCR extraction (Tesseract.js adapter).
-- AI assistance (Ollama adapter, optional).
-- Plugin system architecture.
-- Additional import/export formats.
+- CRUD de Perfil (crear, leer, actualizar, eliminar).
+- Gestión de secciones del perfil.
+- Documentos fuente y vinculación de evidencias.
+- Capa de persistencia (PostgreSQL + Prisma).
+- API básica (Fastify).
 
 ---
 
-## Phase 6 — Polish
+## Fase 4 — Output
 
-- Frontend UI (React + Vite).
-- User experience workflows.
-- Accessibility (WCAG AA).
-- End-to-end testing.
-- Usage documentation.
+Specs para generación de documentos:
 
----
-
-## Phase 7 — Release
-
-- First stable version.
-- Docker Compose setup for one-command deployment.
-- Publish under Apache License 2.0.
-- Community contribution guidelines.
-- Continuous improvement via new Specs.
+- Diseño del sistema de templates.
+- Motor de output (datos del Perfil → HTML → PDF vía Puppeteer).
+- Al menos 2 templates (CV estándar, CV mínimo).
 
 ---
 
-## How each phase works
+## Fase 5 — Enhancement
 
-Each phase contains one or more Specs. Each Spec follows:
+Specs para features opcionales y avanzados:
+
+- Extracción OCR (adaptador Tesseract.js).
+- Asistencia IA (adaptador Ollama, opcional).
+- Arquitectura del sistema de plugins.
+- Formatos adicionales de importación/exportación.
+
+---
+
+## Fase 6 — Polish
+
+- UI Frontend (React 19 + Vite + Tailwind).
+- Flujos de experiencia de usuario.
+- Accesibilidad (WCAG AA).
+- Testing end-to-end (Playwright).
+- Documentación de uso.
+
+---
+
+## Fase 7 — Release
+
+- Primera versión estable.
+- Setup con Docker Compose para despliegue con un solo comando.
+- Publicar bajo Apache License 2.0.
+- Guías de contribución para la comunidad.
+- Mejora continua mediante nuevos Specs.
+
+---
+
+## Cómo funciona cada fase
+
+Cada fase contiene uno o más Specs. Cada Spec sigue:
 
 ```
-Requirements → Design → Implementation → Verification
+Requisitos → Diseño → Implementación → Verificación
 ```
 
-A Spec is completed end-to-end before starting the next one.
-Integration and validation happen continuously, not as a separate phase.
+Un Spec se completa de punta a punta antes de iniciar el siguiente.
+La integración y validación ocurren continuamente, no como una fase separada.
 
 ---
 
-# End of Document
+# Fin del Documento

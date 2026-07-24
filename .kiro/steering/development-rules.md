@@ -1,71 +1,79 @@
-# Development Rules
+# Reglas de Desarrollo
 
-> Coding conventions and process rules.
+> Convenciones de código y reglas de proceso.
 
 ---
 
-## Language Policy
+## Política de Idioma
 
-- Code: English
-- Documentation: English
-- Commits and PRs: English
+- Código: inglés
+- Documentación del proyecto: español
+- Documentación de código (JSDoc, TypeDoc): inglés
+- Commits y PRs: inglés
 
 ## TypeScript
 
-- Strict mode enabled.
-- No `any`. Use `unknown` + type guards.
-- Prefer interfaces for objects.
-- Prefer `const`. No `var`.
-- No TypeScript enums. Use `as const`.
-- Named exports only. No default exports.
-- Named imports only. No `import *`.
+- Strict mode habilitado.
+- No usar `any`. Usar `unknown` + type guards.
+- Preferir interfaces para objetos.
+- Preferir `const`. No usar `var`.
+- No usar enums de TypeScript. Usar `as const`.
+- Solo named exports. No default exports.
+- Solo named imports. No `import *`.
 
-## Naming
+## Nomenclatura
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Variables, functions | camelCase | `getUserProfile` |
-| Module constants | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
-| Types, interfaces | PascalCase | `ProfileSection` |
-| Files | kebab-case | `profile-service.ts` |
-| Test files | kebab-case.test | `profile-service.test.ts` |
-| Folders | kebab-case | `output-engine` |
-| Env variables | OCP_ prefix | `OCP_DATABASE_URL` |
+| Elemento | Convención | Ejemplo |
+|----------|-----------|---------|
+| Variables, funciones | camelCase | `getUserProfile` |
+| Constantes de módulo | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+| Tipos, interfaces | PascalCase | `ProfileSection` |
+| Archivos | kebab-case | `profile-service.ts` |
+| Archivos de test | kebab-case.test | `profile-service.test.ts` |
+| Carpetas | kebab-case | `output-engine` |
+| Variables de entorno | Prefijo OCP_ | `OCP_DATABASE_URL` |
 
-## Error Handling
+## Manejo de Errores
 
-- No generic try/catch. Catch specific errors.
-- Services return Result<T, E> pattern for expected flows.
-- Custom error classes with typed `code`.
+- No usar try/catch genéricos. Capturar errores específicos.
+- Los servicios retornan patrón Result<T, E> para flujos esperados.
+- Clases de error custom con `code` tipado.
+
+## Validación
+
+- Usar Zod para validación de entrada en endpoints.
+- Schemas de Zod como fuente de verdad para tipos de DTO.
+- Validar siempre en la frontera (API boundary), nunca dentro del dominio.
 
 ## Git
 
 - Conventional Commits: `<type>(<scope>): <description>`
 - Types: feat, fix, docs, refactor, test, build, chore
-- Branch: `main`, `develop`, `feat/<scope>/<desc>`, `fix/<scope>/<desc>`
-- Squash merge to develop, merge commit to main.
+- Ramas: `main`, `develop`, `feat/<scope>/<desc>`, `fix/<scope>/<desc>`
+- Squash merge a develop, merge commit a main.
 
 ## Testing
 
-- Business logic: unit tests.
-- API endpoints: integration tests.
-- Coverage target: 80% on core packages.
-- Test names describe behavior.
+- Lógica de negocio: tests unitarios (Vitest).
+- Endpoints de API: tests de integración (Vitest + Supertest).
+- Flujos de usuario: tests E2E (Playwright).
+- Cobertura objetivo: 80% en paquetes core.
+- Nombres de test describen comportamiento.
 
-## Dependencies
+## Dependencias
 
-- Exact versions (no ^ or ~).
-- Evaluate before adding.
-- Dev dependencies in devDependencies.
+- Versiones exactas (sin ^ ni ~).
+- Evaluar antes de agregar.
+- Dev dependencies en devDependencies.
 
-## Security
+## Seguridad
 
-- Never log sensitive data.
-- Sanitize all user input.
-- Parameterized queries (Prisma default).
-- Helmet for Express.
-- pnpm audit in CI.
+- Nunca loguear datos sensibles.
+- Sanitizar todo input de usuario.
+- Queries parametrizadas (Prisma por defecto).
+- Headers de seguridad en Fastify.
+- pnpm audit en CI.
 
 ---
 
-# End of Document
+# Fin del Documento

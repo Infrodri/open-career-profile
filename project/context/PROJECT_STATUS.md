@@ -1,47 +1,48 @@
-# Project Status
+# Estado del Proyecto
 
-> Current snapshot. Updated every time the project state changes.
+> Snapshot actual. Se actualiza cada vez que el estado del proyecto cambia.
 
 ---
 
-## Phase
+## Fase
 
 Planning
 
 ---
 
-## Current Work
+## Trabajo Actual
 
-Repository consolidation complete. Preparing for first Spec.
-
----
-
-## Completed
-
-| # | What | Date |
-|---|------|------|
-| 1 | Repository created | 2026-07 |
-| 2 | Project Identity defined | 2026-07 |
-| 3 | Architecture principles defined | 2026-07 |
-| 4 | Technology stack approved | 2026-07 |
-| 5 | Domain discovery completed (15 concepts, 26 invariants) | 2026-07 |
-| 6 | Roadmap defined (7 phases) | 2026-07 |
-| 7 | Repository consolidated | 2026-07 |
+Repositorio consolidado. Stack tecnológico aprobado. Preparando primer Spec.
 
 ---
 
-## Next
+## Completado
 
-First Spec: Professional Profile domain model (Phase 2 — Foundation).
+| # | Qué | Fecha |
+|---|-----|-------|
+| 1 | Repositorio creado | 2026-07 |
+| 2 | Identidad del proyecto definida | 2026-07 |
+| 3 | Principios de arquitectura definidos | 2026-07 |
+| 4 | Stack tecnológico aprobado (Fastify + React + TypeScript) | 2026-07 |
+| 5 | Domain discovery completado (15 conceptos, 26 invariantes) | 2026-07 |
+| 6 | Roadmap definido (7 fases) | 2026-07 |
+| 7 | Repositorio consolidado | 2026-07 |
+| 8 | Documentación migrada a español | 2026-07 |
 
 ---
 
-## Blockers
+## Siguiente
 
-None.
+Primer Spec: Modelo de dominio del Perfil Profesional (Fase 2 — Foundation).
 
 ---
 
-## Last Updated
+## Bloqueantes
+
+Ninguno.
+
+---
+
+## Última Actualización
 
 2026-07-24
