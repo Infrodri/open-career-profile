@@ -15,7 +15,7 @@
 
 | Tecnología | Rol |
 |-----------|-----|
-| Fastify | Framework HTTP (ligero, rápido, plugin system nativo) |
+| Express.js | Framework HTTP (maduro, ecosistema extenso) |
 | Prisma ORM | Acceso a base de datos, schema y migraciones |
 | PostgreSQL | Base de datos relacional principal |
 | Zod | Validación de schemas y parsing de DTOs |
@@ -42,7 +42,7 @@
 
 | Tecnología | Rol |
 |-----------|-----|
-| pnpm | Package manager (workspace engine) |
+| npm | Package manager (workspaces nativos) |
 | Turborepo | Build system de monorepo y ejecución de tareas |
 | Vitest | Testing unitario e integración |
 | Playwright | Testing end-to-end (E2E) |
@@ -53,8 +53,8 @@
 
 ## Justificación de la elección
 
-- **Un solo lenguaje (TypeScript)** en todo el stack: simplifica tooling, monorepo, plugins y trabajo con AI.
-- **Fastify sobre Express**: más rápido, soporte nativo de schemas, plugin system robusto, sin la complejidad de NestJS.
+- **Express sobre Fastify**: ecosistema maduro, más middleware disponible, y el desarrollador ya lo domina.
+- **npm sobre pnpm**: familiar, workspaces nativos desde v7, sin curva de aprendizaje adicional.
 - **Sin Redis**: para mantener la promesa local-first sin infraestructura adicional.
 - **Todo gratuito y open source**: licencias MIT/Apache compatibles con Apache 2.0.
 

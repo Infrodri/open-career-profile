@@ -45,7 +45,7 @@ Cambios requieren un ADR.
 
 | Capa | Tecnología |
 |------|-----------|
-| Backend | Fastify, TypeScript |
+| Backend | Express.js, TypeScript |
 | Base de datos | PostgreSQL, Docker, Prisma ORM |
 | Validación | Zod |
 | Frontend | React 19, Vite |

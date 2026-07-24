@@ -77,7 +77,7 @@ Genera documento requerido (CV, portfolio, formato institucional)
 
 | Capa | Tecnología |
 |------|-----------|
-| Backend | Fastify, TypeScript, Node.js 22 |
+| Backend | Express.js, TypeScript, Node.js 22 |
 | Base de datos | PostgreSQL, Prisma ORM, Docker |
 | Frontend | React 19, Vite, Tailwind CSS |
 | OCR | Tesseract.js |

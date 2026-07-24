@@ -71,8 +71,8 @@
 - Nunca loguear datos sensibles.
 - Sanitizar todo input de usuario.
 - Queries parametrizadas (Prisma por defecto).
-- Headers de seguridad en Fastify.
-- pnpm audit en CI.
+- Headers de seguridad en Express (Helmet).
+- npm audit en CI.
 
 ---
 

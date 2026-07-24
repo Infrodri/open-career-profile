@@ -17,7 +17,7 @@ Primer Spec: el modelo de dominio (estructura de datos del Perfil Profesional).
 
 - Definir entidades, relaciones e invariantes.
 - Implementar paquete core del dominio.
-- Configurar tooling del monorepo (pnpm, TypeScript, ESLint, Vitest).
+- Configurar tooling del monorepo (npm workspaces, TypeScript, ESLint, Vitest).
 
 ---
 
@@ -29,7 +29,7 @@ Specs para funcionalidad central:
 - Gestión de secciones del perfil.
 - Documentos fuente y vinculación de evidencias.
 - Capa de persistencia (PostgreSQL + Prisma).
-- API básica (Fastify).
+- API básica (Express).
 
 ---
 
