@@ -5,7 +5,7 @@ import type {
   SectionKey,
 } from '../types/profile';
 import { SECTION_KEYS, SECTION_LABELS } from '../types/profile';
-import { documentFileUrl } from '../api/document.api';
+import { VerifyEntryButton } from './VerifyEntryButton';
 
 interface ProfileViewProps {
   profile: ProfessionalProfile;
@@ -122,6 +122,7 @@ export function ProfileView({ profile, evidence = [] }: ProfileViewProps) {
                   key={entry.id}
                   entry={entry}
                   sectionKey={sectionKey}
+                  profileId={profile.id}
                   evidence={evidenceByEntry.get(entry.id) ?? []}
                 />
               ))}
@@ -137,10 +138,13 @@ export function ProfileView({ profile, evidence = [] }: ProfileViewProps) {
 
 function EntryCard({
   entry,
+  sectionKey,
+  profileId,
   evidence,
 }: {
   entry: SectionEntry;
   sectionKey: SectionKey;
+  profileId: string;
   evidence: Evidence[];
 }) {
   const title = getEntryTitle(entry);
@@ -157,11 +161,10 @@ function EntryCard({
   return (
     <div className={`border-l-4 ${borderColor} pl-4 py-2`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h4 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2 flex-wrap">
             {title}
             {entry.verified ? <VerifiedIcon /> : <UnverifiedIcon />}
-            {evidence.length > 0 && <EvidenceClips evidence={evidence} />}
           </h4>
           {subtitle && (
             <p className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
@@ -169,6 +172,16 @@ function EntryCard({
           {dateRange && (
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{dateRange}</p>
           )}
+        </div>
+        {/* Action: Verify or View certificate */}
+        <div className="shrink-0">
+          <VerifyEntryButton
+            profileId={profileId}
+            sectionKey={sectionKey}
+            entryId={entry.id}
+            verified={entry.verified}
+            evidence={evidence}
+          />
         </div>
       </div>
 
@@ -214,18 +227,4 @@ function UnverifiedIcon() {
   );
 }
 
-function EvidenceClips({ evidence }: { evidence: Evidence[] }) {
-  return (
-    <span className="inline-flex items-center gap-0.5">
-      {evidence.map((ev) => (
-        <a key={ev.id} href={documentFileUrl(ev.documentId)} target="_blank" rel="noopener noreferrer"
-          title="Ver documento de respaldo"
-          className="text-green-600 dark:text-green-400 hover:text-green-800">
-          <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clipRule="evenodd" />
-          </svg>
-        </a>
-      ))}
-    </span>
-  );
-}
+// EvidenceClips is no longer needed — VerifyEntryButton handles both states.
