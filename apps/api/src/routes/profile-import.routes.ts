@@ -11,12 +11,14 @@ import {
   type PersonalInfo,
 } from '@ocp/core';
 import { type ProfileService } from '../services/profile.service.js';
+import { type DocumentService } from '../services/document.service.js';
 import { success, failure } from '../middleware/error-handler.js';
 
 interface ImportBody {
   personalInfo: Record<string, string>;
   sections: Record<string, Array<Record<string, string>>>;
   profileId?: string;
+  documentId?: string;
 }
 
 function buildPersonalInfo(raw: Record<string, string>): PersonalInfo {
@@ -110,7 +112,7 @@ function buildSections(raw: Record<string, Array<Record<string, string>>>) {
   };
 }
 
-export function createProfileImportRoutes(service: ProfileService): Router {
+export function createProfileImportRoutes(service: ProfileService, documentService: DocumentService): Router {
   const router = Router();
 
   // POST /api/profiles/import — Crea o actualiza un perfil desde datos extraídos por IA
@@ -149,6 +151,18 @@ export function createProfileImportRoutes(service: ProfileService): Router {
         existing.sections.languages.push(...newSections.languages);
 
         const updated = await service.updateDirect(existing);
+        // Vincular el documento si se proporcionó
+        if (body.documentId) {
+          // Crear evidencia para todas las secciones añadidas
+          for (const section of ['workExperience', 'education', 'certifications', 'courses', 'skills', 'languages']) {
+            const sectionData = body.sections?.[section] as Array<Record<string, string>> | undefined;
+            if (sectionData) {
+              for (const _ of sectionData) {
+                await documentService.createEvidence(body.documentId!, section, '');
+              }
+            }
+          }
+        }
         res.json(success(updated));
         return;
       }
@@ -158,6 +172,20 @@ export function createProfileImportRoutes(service: ProfileService): Router {
       profile.sections = newSections;
 
       const created = await service.createDirect(profile);
+      // Vincular el documento si se proporcionó
+      if (body.documentId) {
+        const entryIds = [
+          ...profile.sections.workExperience.map(e => e.id),
+          ...profile.sections.education.map(e => e.id),
+          ...profile.sections.certifications.map(e => e.id),
+          ...profile.sections.courses.map(e => e.id),
+          ...profile.sections.skills.map(e => e.id),
+          ...profile.sections.languages.map(e => e.id),
+        ];
+        for (const entryId of entryIds) {
+          await documentService.createEvidence(body.documentId!, 'workExperience', entryId);
+        }
+      }
       res.status(201).json(success(created));
     } catch (err) {
       console.error('[Import Error]', err);

@@ -34,6 +34,7 @@ model Profile {
   affiliations   Affiliation[]
   volunteering   Volunteering[]
   references     Reference[]
+  documents      Document[]
 }
 
 model ProfileLink {
@@ -199,4 +200,30 @@ model Reference {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id            String   @id @default(uuid())
+  profileId     String
+  fileName      String
+  mimeType      String
+  sizeBytes     Int
+  storagePath   String
+  documentType  String?
+  extractedText String? @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  evidences     Evidence[]
+}
+
+model Evidence {
+  id          String   @id @default(uuid())
+  documentId  String
+  sectionType String
+  entryId     String
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }

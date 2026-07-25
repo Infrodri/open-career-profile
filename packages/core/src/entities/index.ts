@@ -12,4 +12,5 @@ export { type Affiliation } from './affiliation.js';
 export { type Volunteering } from './volunteering.js';
 export { type Reference } from './reference.js';
 export { type ProfessionalProfile, type ProfileSections } from './professional-profile.js';
+export { type Document, type Evidence, type DocumentType, type SectionType } from './document.js';
 export { createProfile, createEntry } from './factories.js';

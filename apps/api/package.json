@@ -21,6 +21,7 @@
     "@ocp/output-engine": "*",
     "@ocp/ocr-adapter": "*",
     "@ocp/ai-adapter": "*",
+    "@ocp/storage-adapter": "*",
     "@prisma/client": "6.9.0",
     "express": "4.21.2",
     "helmet": "8.1.0",
