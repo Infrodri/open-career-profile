@@ -17,10 +17,11 @@ const upload = multer({
 });
 
 /**
- * Extract text from a PDF buffer using pdf-parse.
+ * Extract text from a PDF buffer.
+ * Uses pdf-parse/lib/pdf-parse.js directly to avoid the test file bug.
  */
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdfParse = (await import('pdf-parse')).default;
+  const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default;
   const result = await pdfParse(buffer);
   return result.text;
 }
@@ -51,7 +52,7 @@ export function createDocumentRoutes(ocrProvider: OcrProvider): Router {
       }
 
       if (!text || text.trim() === '') {
-        res.status(422).json(failure('NO_TEXT', 'Could not extract text from the document. Try with a clearer image.'));
+        res.status(422).json(failure('NO_TEXT', 'No se pudo extraer texto del documento. Intenta con una imagen más clara.'));
         return;
       }
 
