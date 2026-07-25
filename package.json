@@ -1,0 +1,29 @@
+{
+  "name": "open-career-profile",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Open Source platform to build and maintain a Professional Profile locally and privately",
+  "license": "Apache-2.0",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "plugins/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "typecheck": "turbo typecheck",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "2.5.0",
+    "typescript": "5.8.3",
+    "prettier": "3.5.3"
+  },
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

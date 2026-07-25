@@ -1,0 +1,35 @@
+{
+  "name": "@ocp/core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Domain model for Open Career Profile",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src/ --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "uuid": "11.1.0",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "8.32.1",
+    "@typescript-eslint/parser": "8.32.1",
+    "eslint": "9.27.0",
+    "eslint-config-prettier": "10.1.5",
+    "vitest": "3.1.4",
+    "typescript": "5.8.3"
+  }
+}
