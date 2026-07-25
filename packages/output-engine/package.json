@@ -1,0 +1,33 @@
+{
+  "name": "@ocp/output-engine",
+  "version": "0.0.1",
+  "private": true,
+  "description": "PDF and HTML output engine for Open Career Profile",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src/ --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ocp/core": "*",
+    "handlebars": "4.7.8",
+    "puppeteer": "24.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.17",
+    "vitest": "3.1.4",
+    "typescript": "5.8.3"
+  }
+}
