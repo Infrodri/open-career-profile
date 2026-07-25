@@ -19,7 +19,7 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
       } else {
         const a = document.createElement('a');
         a.href = url;
-        a.download = `profile.${format}`;
+        a.download = `perfil.${format}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -29,26 +29,32 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
   });
 
   return (
-    <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">Generate Output</h3>
+    <section className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">
+        Generar Documento
+      </h3>
 
       <div className="space-y-4">
-        {/* Template Selection */}
+        {/* Selección de plantilla */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Seleccionar plantilla
+          </label>
           <select
             value={templateId}
             onChange={(e) => setTemplateId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="standard">Standard</option>
-            <option value="minimal">Minimal</option>
+            <option value="standard">Estándar</option>
+            <option value="minimal">Minimalista</option>
           </select>
         </div>
 
-        {/* Format Selection */}
+        {/* Selección de formato */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Formato
+          </label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -57,9 +63,9 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
                 value="html"
                 checked={format === 'html'}
                 onChange={() => setFormat('html')}
-                className="text-blue-600"
+                className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">HTML</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">HTML</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -68,25 +74,27 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
                 value="pdf"
                 checked={format === 'pdf'}
                 onChange={() => setFormat('pdf')}
-                className="text-blue-600"
+                className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">PDF</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">PDF</span>
             </label>
           </div>
         </div>
 
-        {/* Generate Button */}
+        {/* Botón generar */}
         <button
           type="button"
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
         >
-          {mutation.isPending ? 'Generating...' : 'Generate CV'}
+          {mutation.isPending ? 'Generando...' : 'Generar Documento'}
         </button>
 
         {mutation.isError && (
-          <p className="text-sm text-red-600 mt-2">{mutation.error.message}</p>
+          <p className="text-sm text-red-600 dark:text-red-400 mt-2">
+            {mutation.error.message}
+          </p>
         )}
       </div>
     </section>
