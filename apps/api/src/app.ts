@@ -11,6 +11,7 @@ import { createOutputRoutes } from './routes/output.routes.js';
 import { createDocumentRoutes } from './routes/document.routes.js';
 import { createAiRoutes } from './routes/ai.routes.js';
 import { createProfileSectionRoutes } from './routes/profile-section.routes.js';
+import { createProfileImportRoutes } from './routes/profile-import.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export function createApp(repository: ProfileRepository) {
@@ -34,6 +35,7 @@ export function createApp(repository: ProfileRepository) {
   app.use('/api/profiles', createProfileRoutes(profileService));
   app.use('/api/profiles', createOutputRoutes(profileService, outputEngine));
   app.use('/api/profiles', createProfileSectionRoutes(profileService));
+  app.use('/api/profiles', createProfileImportRoutes(profileService));
   app.use('/api/documents', createDocumentRoutes(ocrAdapter));
   app.use('/api/ai', createAiRoutes(aiAdapter));
 

@@ -20,5 +20,6 @@ export function failure(code: string, message: string, details?: unknown[]): Api
 }
 
 export function errorHandler(_err: Error, _req: Request, res: Response, _next: NextFunction): void {
-  res.status(500).json(failure('INTERNAL_ERROR', 'An unexpected error occurred'));
+  console.error('[Unhandled Error]', _err);
+  res.status(500).json(failure('INTERNAL_ERROR', _err.message || 'An unexpected error occurred'));
 }

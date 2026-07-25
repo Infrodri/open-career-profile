@@ -38,12 +38,14 @@ Flujo completo de captura de documentos implementado. Sistema funcional de punta
 | Funcionalidad | Estado |
 |--------------|--------|
 | Crear/editar/ver perfil profesional | ✅ Funcional |
-| Subir documento (foto/PDF) | ✅ Funcional |
-| OCR extrae texto del documento | ✅ Funcional (Tesseract.js) |
-| IA analiza texto y extrae datos estructurados | ✅ Funcional (OpenAI-compatible) |
-| Usuario valida y confirma datos extraídos | ✅ Funcional |
-| Datos confirmados se agregan al perfil | ✅ Funcional |
-| Generar CV en HTML o PDF desde el perfil | ✅ Funcional |
+| Subir documento (foto/PDF/imagen) | ✅ Funcional |
+| Extracción de texto de PDF | ✅ Funcional (pdf-parse) |
+| OCR de imágenes | ✅ Funcional (Tesseract.js) |
+| IA extrae perfil COMPLETO del documento | ✅ Funcional (todas las secciones a la vez) |
+| IA genera recomendaciones de qué falta | ✅ Funcional |
+| Usuario revisa y edita todo lo extraído | ✅ Funcional |
+| Importar perfil completo de una vez | ✅ Funcional (POST /api/profiles/import) |
+| Generar CV en HTML o PDF | ✅ Funcional |
 | Motor de reglas institucionales | ❌ Pendiente |
 | Sistema de plugins | ❌ Pendiente (arquitectura lista) |
 

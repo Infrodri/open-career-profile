@@ -2,22 +2,89 @@ import { Router, type Request, type Response } from 'express';
 import { type AiProvider } from '@ocp/ai-adapter';
 import { success, failure } from '../middleware/error-handler.js';
 
-const ANALYZE_PROMPT = `Analyze the following text extracted from a document.
-Identify:
-1. Document type (one of: certificate, degree, contract, course, reference, other)
-2. Which profile section this belongs to (workExperience, education, certifications, courses, skills, languages)
-3. Extract all relevant structured fields as key-value pairs
-4. Your confidence level (0 to 1)
+const FULL_PROFILE_PROMPT = `Eres un asistente experto en análisis de documentos profesionales.
 
-Respond ONLY with valid JSON in this exact format:
+Analiza el siguiente texto extraído de un documento (puede ser una hoja de vida completa, un certificado, un título, un contrato, etc.).
+
+Tu tarea:
+1. Identificar el tipo de documento
+2. Extraer TODA la información profesional que encuentres
+3. Organizarla en las secciones correspondientes
+4. Detectar qué información importante falta y recomendar qué agregar
+
+Responde ÚNICAMENTE con JSON válido en este formato exacto:
+
 {
-  "documentType": "...",
-  "suggestedSection": "...",
-  "extractedFields": { "field1": "value1", "field2": "value2" },
+  "documentType": "hoja_de_vida | certificado | titulo | contrato | otro",
+  "personalInfo": {
+    "fullName": "nombre completo si lo encuentras",
+    "email": "",
+    "phone": "",
+    "city": "",
+    "country": "",
+    "summary": "resumen profesional si existe",
+    "birthDate": "",
+    "identityDocument": ""
+  },
+  "sections": {
+    "workExperience": [
+      {
+        "position": "cargo",
+        "institution": "empresa u organización",
+        "startDate": "AAAA-MM o AAAA",
+        "endDate": "AAAA-MM, AAAA o present",
+        "description": "descripción de responsabilidades",
+        "location": ""
+      }
+    ],
+    "education": [
+      {
+        "title": "título obtenido",
+        "institution": "institución educativa",
+        "startDate": "",
+        "endDate": "",
+        "field": "área de estudio"
+      }
+    ],
+    "certifications": [
+      {
+        "name": "nombre de la certificación",
+        "issuer": "institución emisora",
+        "issueDate": "",
+        "expirationDate": ""
+      }
+    ],
+    "courses": [
+      {
+        "name": "nombre del curso",
+        "institution": "institución",
+        "completionDate": "",
+        "duration": "horas o duración"
+      }
+    ],
+    "skills": [
+      { "name": "habilidad", "category": "técnica o blanda", "level": "" }
+    ],
+    "languages": [
+      { "name": "idioma", "level": "basic | intermediate | advanced | native" }
+    ]
+  },
+  "recommendations": [
+    "Recomendación 1 sobre qué información falta o cómo mejorar",
+    "Recomendación 2"
+  ],
   "confidence": 0.85
 }
 
-Text to analyze:
+REGLAS IMPORTANTES:
+- Extrae TODA la información que encuentres, no solo una parte
+- Si un campo no está en el documento, déjalo como string vacío ""
+- Los arrays vacíos son válidos si no hay información de esa sección
+- Las fechas en formato AAAA-MM o AAAA
+- Las recomendaciones deben ser específicas y útiles en español
+- Responde SOLO el JSON, sin texto adicional antes o después
+
+Texto del documento a analizar:
 ---
 {TEXT}
 ---`;
@@ -26,30 +93,43 @@ interface AnalyzeRequestBody {
   text: string;
 }
 
-interface AnalyzeResult {
+interface ProfileAnalysisResult {
   documentType: string;
-  suggestedSection: string;
-  extractedFields: Record<string, string>;
+  personalInfo: Record<string, string>;
+  sections: Record<string, Array<Record<string, string>>>;
+  recommendations: string[];
   confidence: number;
 }
 
-const FALLBACK_RESPONSE: AnalyzeResult = {
-  documentType: 'other',
-  suggestedSection: 'skills',
-  extractedFields: {},
+const FALLBACK_RESPONSE: ProfileAnalysisResult = {
+  documentType: 'otro',
+  personalInfo: {},
+  sections: {
+    workExperience: [],
+    education: [],
+    certifications: [],
+    courses: [],
+    skills: [],
+    languages: [],
+  },
+  recommendations: [
+    'La IA no está disponible. Puedes completar la información manualmente.',
+  ],
   confidence: 0.1,
 };
 
 export function createAiRoutes(aiProvider: AiProvider): Router {
   const router = Router();
 
-  // POST /api/ai/analyze
+  // POST /api/ai/analyze — Analiza un documento y extrae todo el perfil profesional
   router.post('/analyze', async (req: Request, res: Response) => {
     try {
       const { text } = req.body as AnalyzeRequestBody;
 
       if (!text || typeof text !== 'string' || text.trim() === '') {
-        res.status(400).json(failure('INVALID_INPUT', 'Request body must include a non-empty "text" field'));
+        res
+          .status(400)
+          .json(failure('INVALID_INPUT', 'El cuerpo debe incluir un campo "text" no vacío'));
         return;
       }
 
@@ -58,34 +138,52 @@ export function createAiRoutes(aiProvider: AiProvider): Router {
         return;
       }
 
-      const prompt = ANALYZE_PROMPT.replace('{TEXT}', text);
+      const prompt = FULL_PROFILE_PROMPT.replace('{TEXT}', text.slice(0, 12000));
       const rawResponse = await aiProvider.complete(prompt);
 
-      // Check for AI error responses
+      // Si la IA devolvió un error, usar fallback
       if (rawResponse.startsWith('[AI')) {
-        res.json(success(FALLBACK_RESPONSE));
+        console.warn('[AI] Provider returned error:', rawResponse);
+        res.json(success({ ...FALLBACK_RESPONSE, recommendations: [rawResponse] }));
         return;
       }
 
-      // Parse JSON from the AI response
+      // Extraer JSON de la respuesta
       const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.warn('[AI] No JSON found in response:', rawResponse.slice(0, 200));
         res.json(success(FALLBACK_RESPONSE));
         return;
       }
 
-      const parsed = JSON.parse(jsonMatch[0]) as AnalyzeResult;
+      let parsed: Partial<ProfileAnalysisResult>;
+      try {
+        parsed = JSON.parse(jsonMatch[0]) as Partial<ProfileAnalysisResult>;
+      } catch (_parseErr) {
+        console.warn('[AI] Failed to parse JSON:', jsonMatch[0].slice(0, 200));
+        res.json(success(FALLBACK_RESPONSE));
+        return;
+      }
 
-      const result: AnalyzeResult = {
-        documentType: parsed.documentType ?? 'other',
-        suggestedSection: parsed.suggestedSection ?? 'skills',
-        extractedFields: parsed.extractedFields ?? {},
+      const result: ProfileAnalysisResult = {
+        documentType: parsed.documentType ?? 'otro',
+        personalInfo: parsed.personalInfo ?? {},
+        sections: {
+          workExperience: parsed.sections?.['workExperience'] ?? [],
+          education: parsed.sections?.['education'] ?? [],
+          certifications: parsed.sections?.['certifications'] ?? [],
+          courses: parsed.sections?.['courses'] ?? [],
+          skills: parsed.sections?.['skills'] ?? [],
+          languages: parsed.sections?.['languages'] ?? [],
+        },
+        recommendations: parsed.recommendations ?? [],
         confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5,
       };
 
       res.json(success(result));
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to analyze document';
+      console.error('[AI Route Error]', err);
+      const message = err instanceof Error ? err.message : 'Error al analizar el documento';
       res.status(500).json(failure('ANALYZE_ERROR', message));
     }
   });

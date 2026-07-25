@@ -88,4 +88,8 @@ export class ProfileService {
   async updateDirect(profile: ProfessionalProfile): Promise<ProfessionalProfile> {
     return this.repository.update({ ...profile, updatedAt: new Date() });
   }
+
+  async createDirect(profile: ProfessionalProfile): Promise<ProfessionalProfile> {
+    return this.repository.create(profile);
+  }
 }
