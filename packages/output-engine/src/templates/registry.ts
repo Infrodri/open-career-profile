@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Handlebars from 'handlebars';
@@ -13,8 +13,29 @@ export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
 const templateRegistry = new Map<string, CompiledTemplate>();
 
+/**
+ * Resolves template path. Checks current directory first (works with tsx and compiled),
+ * then falls back to src/templates/ (for cases where dist doesn't contain .hbs files).
+ */
+function resolveTemplatePath(id: string): string {
+  // Try relative to current file location (works in both tsx and compiled modes)
+  const localPath = resolve(__dirname, `${id}.hbs`);
+  if (existsSync(localPath)) {
+    return localPath;
+  }
+
+  // Fallback: look in src/templates/ from package root
+  const packageRoot = resolve(__dirname, '..', '..');
+  const srcPath = resolve(packageRoot, 'src', 'templates', `${id}.hbs`);
+  if (existsSync(srcPath)) {
+    return srcPath;
+  }
+
+  throw new Error(`Template file "${id}.hbs" not found. Searched: ${localPath}, ${srcPath}`);
+}
+
 for (const id of TEMPLATE_IDS) {
-  const filePath = resolve(__dirname, `${id}.hbs`);
+  const filePath = resolveTemplatePath(id);
   const source = readFileSync(filePath, 'utf-8');
   templateRegistry.set(id, Handlebars.compile(source));
 }
