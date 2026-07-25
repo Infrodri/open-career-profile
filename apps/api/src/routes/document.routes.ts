@@ -16,6 +16,15 @@ const upload = multer({
   },
 });
 
+/**
+ * Extract text from a PDF buffer using pdf-parse.
+ */
+async function extractTextFromPdf(buffer: Buffer): Promise<string> {
+  const pdfParse = (await import('pdf-parse')).default;
+  const result = await pdfParse(buffer);
+  return result.text;
+}
+
 export function createDocumentRoutes(ocrProvider: OcrProvider): Router {
   const router = Router();
 
@@ -27,14 +36,26 @@ export function createDocumentRoutes(ocrProvider: OcrProvider): Router {
         return;
       }
 
-      if (!ocrProvider.isAvailable()) {
-        res.status(503).json(failure('OCR_UNAVAILABLE', 'OCR service is not available'));
+      let text: string;
+
+      if (req.file.mimetype === 'application/pdf') {
+        // PDF: extract text directly (no OCR needed for digital PDFs)
+        text = await extractTextFromPdf(req.file.buffer);
+      } else {
+        // Image: use OCR
+        if (!ocrProvider.isAvailable()) {
+          res.status(503).json(failure('OCR_UNAVAILABLE', 'OCR service is not available'));
+          return;
+        }
+        text = await ocrProvider.extractText(req.file.buffer);
+      }
+
+      if (!text || text.trim() === '') {
+        res.status(422).json(failure('NO_TEXT', 'Could not extract text from the document. Try with a clearer image.'));
         return;
       }
 
-      const text = await ocrProvider.extractText(req.file.buffer);
-
-      res.json(success({ text, fileName: req.file.originalname }));
+      res.json(success({ text: text.trim(), fileName: req.file.originalname }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to extract text';
       res.status(500).json(failure('EXTRACT_ERROR', message));
