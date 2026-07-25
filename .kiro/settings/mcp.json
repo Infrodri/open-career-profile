@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://ocp:ocp_dev_password@localhost:5432/ocp_dev"],
+      "disabled": true
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "c:/dev/kiro/CV/open-career-profile"],
+      "disabled": true
+    }
+  }
+}
