@@ -6,13 +6,13 @@
 
 ## Fase
 
-Development (Fase 6 completada)
+Development (Fase 7 — integración en curso)
 
 ---
 
 ## Trabajo Actual
 
-Todas las fases de desarrollo base completadas (1-6). Listo para integración final y release.
+Flujo completo de captura de documentos implementado. Sistema funcional de punta a punta.
 
 ---
 
@@ -20,26 +20,38 @@ Todas las fases de desarrollo base completadas (1-6). Listo para integración fi
 
 | # | Qué | Fecha |
 |---|-----|-------|
-| 1 | Repositorio creado | 2026-07 |
-| 2 | Identidad del proyecto definida | 2026-07 |
-| 3 | Principios de arquitectura definidos | 2026-07 |
-| 4 | Stack tecnológico aprobado (Express + React + TypeScript) | 2026-07 |
-| 5 | Domain discovery completado | 2026-07 |
-| 6 | Roadmap definido (7 fases) | 2026-07 |
-| 7 | Repositorio consolidado | 2026-07 |
-| 8 | SPEC-001: Modelo de dominio (@ocp/core) — 28 tests | 2026-07 |
-| 9 | SPEC-002: Persistencia (@ocp/persistence) — Prisma + PostgreSQL | 2026-07 |
-| 10 | SPEC-003: API REST (@ocp/api) — Express CRUD + output | 2026-07 |
-| 11 | SPEC-004: Motor de output (@ocp/output-engine) — HTML/PDF — 9 tests | 2026-07 |
-| 12 | SPEC-005: AI adapter (@ocp/ai-adapter) — OpenAI-compatible — 13 tests | 2026-07 |
-| 13 | SPEC-005: OCR adapter (@ocp/ocr-adapter) — Tesseract.js — 9 tests | 2026-07 |
-| 14 | Fase 6: Frontend React (@ocp/web) — UI completa | 2026-07 |
+| 1 | Repositorio y documentación consolidada | 2026-07 |
+| 2 | SPEC-001: Modelo de dominio (@ocp/core) — 28 tests | 2026-07 |
+| 3 | SPEC-002: Persistencia (@ocp/persistence) — Prisma + PostgreSQL | 2026-07 |
+| 4 | SPEC-003: API REST (@ocp/api) — CRUD + output + documentos + IA | 2026-07 |
+| 5 | SPEC-004: Motor de output (@ocp/output-engine) — HTML/PDF — 9 tests | 2026-07 |
+| 6 | SPEC-005: AI adapter (@ocp/ai-adapter) — OpenAI-compatible — 13 tests | 2026-07 |
+| 7 | SPEC-005: OCR adapter (@ocp/ocr-adapter) — Tesseract.js — 9 tests | 2026-07 |
+| 8 | Frontend React completo en español con Design System | 2026-07 |
+| 9 | Flujo documento → OCR → IA → datos → perfil (endpoints + UI) | 2026-07 |
+| 10 | Docker Compose para despliegue completo | 2026-07 |
+
+---
+
+## Funcionalidades disponibles
+
+| Funcionalidad | Estado |
+|--------------|--------|
+| Crear/editar/ver perfil profesional | ✅ Funcional |
+| Subir documento (foto/PDF) | ✅ Funcional |
+| OCR extrae texto del documento | ✅ Funcional (Tesseract.js) |
+| IA analiza texto y extrae datos estructurados | ✅ Funcional (OpenAI-compatible) |
+| Usuario valida y confirma datos extraídos | ✅ Funcional |
+| Datos confirmados se agregan al perfil | ✅ Funcional |
+| Generar CV en HTML o PDF desde el perfil | ✅ Funcional |
+| Motor de reglas institucionales | ❌ Pendiente |
+| Sistema de plugins | ❌ Pendiente (arquitectura lista) |
 
 ---
 
 ## Siguiente
 
-Fase 7 — Release: Docker Compose integrado, testing E2E, documentación de uso, publicación.
+Motor de reglas institucionales: permitir que diferentes instituciones definan sus requisitos de formato y contenido.
 
 ---
 
@@ -51,12 +63,13 @@ Ninguno.
 
 ## Métricas
 
-- Paquetes: 6 (@ocp/core, persistence, output-engine, ai-adapter, ocr-adapter, api) + 1 app web
+- Paquetes: 6 (core, persistence, output-engine, ai-adapter, ocr-adapter, api) + 1 app web
 - Tests unitarios: 59
-- Compilación: todos los paquetes compilan sin errores
+- Endpoints API: 7 (CRUD + output + document extract + AI analyze + section add)
+- Templates: 2 (standard, minimal)
 
 ---
 
 ## Última Actualización
 
-2026-07-24
+2026-07-25

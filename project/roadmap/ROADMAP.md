@@ -4,6 +4,8 @@
 
 ## Fase 1 — Consolidación (actual)
 
+## Fase 1 — Consolidación ✅
+
 - Revisar y aprobar documentación base.
 - Confirmar arquitectura y stack tecnológico.
 - Preparar repositorio para desarrollo.
@@ -11,7 +13,7 @@
 
 ---
 
-## Fase 2 — Foundation
+## Fase 2 — Foundation ✅
 
 Primer Spec: el modelo de dominio (estructura de datos del Perfil Profesional).
 

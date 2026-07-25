@@ -84,4 +84,8 @@ export class ProfileService {
     await this.repository.delete(id);
     return true;
   }
+
+  async updateDirect(profile: ProfessionalProfile): Promise<ProfessionalProfile> {
+    return this.repository.update({ ...profile, updatedAt: new Date() });
+  }
 }
