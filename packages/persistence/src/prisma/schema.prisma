@@ -359,6 +359,24 @@ model Habilidad {
 }
 
 // =============================================================================
+// PLANTILLAS INSTITUCIONALES
+// Templates that define how a CV should be generated for a specific institution.
+// =============================================================================
+
+model InstitutionalTemplate {
+  id            String   @id @default(uuid())
+  name          String   // "Formato Órgano Judicial", "Formato Universidad X"
+  institution   String   // "Órgano Judicial de Bolivia"
+  description   String?  @db.Text
+  /** The uploaded template file (Word/PDF) stored via DocumentStorage. */
+  templatePath  String?
+  /** Rules that define which sections to include and how. */
+  rules         Json     // InstitutionalRules stored as JSON
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// =============================================================================
 // DOCUMENTOS Y EVIDENCIAS (sin cambios respecto a SPEC-006)
 // =============================================================================
 

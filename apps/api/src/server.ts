@@ -16,6 +16,7 @@ const app = createApp({
   profileRepository: new PrismaProfileRepository(prisma),
   documentRepository: new PrismaDocumentRepository(prisma, documentStorage),
   documentStorage,
+  prisma,
 });
 
 /** Fail at startup rather than on the first request that needs the database. */

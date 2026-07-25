@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
 import { type DocumentRepository, type DocumentStorage, type ProfileRepository } from '@ocp/core';
 import { OutputEngine, PuppeteerAdapter } from '@ocp/output-engine';
 import { TesseractAdapter, getOcrConfig } from '@ocp/ocr-adapter';
@@ -13,18 +14,21 @@ import { createDocumentRoutes } from './routes/document.routes.js';
 import { createAiRoutes } from './routes/ai.routes.js';
 import { createProfileSectionRoutes } from './routes/profile-section.routes.js';
 import { createProfileImportRoutes } from './routes/profile-import.routes.js';
+import { createTemplateRoutes } from './routes/template.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export interface AppDependencies {
   profileRepository: ProfileRepository;
   documentRepository: DocumentRepository;
   documentStorage: DocumentStorage;
+  prisma: PrismaClient;
 }
 
 export function createApp({
   profileRepository,
   documentRepository,
   documentStorage,
+  prisma,
 }: AppDependencies) {
   const app = express();
 
@@ -50,6 +54,7 @@ export function createApp({
   app.use('/api/profiles', createProfileImportRoutes(profileService, documentService));
   // Mounted at /api because it owns paths under both /documents and /profiles/:id.
   app.use('/api', createDocumentRoutes(ocrAdapter, documentService));
+  app.use('/api/templates', createTemplateRoutes(prisma, documentStorage));
   app.use('/api/ai', createAiRoutes(aiAdapter));
 
   // Health check

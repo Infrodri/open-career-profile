@@ -7,6 +7,7 @@ import { ViewProfilePage } from './pages/ViewProfilePage';
 import { DocumentCapturePage } from './pages/DocumentCapturePage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { GeneratePage } from './pages/GeneratePage';
+import { TemplatesPage } from './pages/TemplatesPage';
 
 export function App() {
   return (
@@ -19,6 +20,7 @@ export function App() {
         <Route path="/profile/:id/edit" element={<EditProfilePage />} />
         <Route path="/documento" element={<DocumentCapturePage />} />
         <Route path="/documentos" element={<DocumentsPage />} />
+        <Route path="/plantillas" element={<TemplatesPage />} />
         <Route path="/generar" element={<GeneratePage />} />
         {/* Anything else goes home instead of rendering a blank page. */}
         <Route path="*" element={<Navigate to="/" replace />} />
