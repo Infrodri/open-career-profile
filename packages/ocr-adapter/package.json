@@ -1,0 +1,30 @@
+{
+  "name": "@ocp/ocr-adapter",
+  "version": "0.0.1",
+  "private": true,
+  "description": "OCR adapter using Tesseract.js for Open Career Profile",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src/ --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "tesseract.js": "5.1.1"
+  },
+  "devDependencies": {
+    "vitest": "3.1.4",
+    "typescript": "5.8.3"
+  }
+}
