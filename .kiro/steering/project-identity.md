@@ -52,7 +52,7 @@ Cambios requieren un ADR.
 | Estilos | Tailwind CSS |
 | Estado async | TanStack Query |
 | OCR | Tesseract.js |
-| IA (opcional) | Ollama |
+| IA (opcional) | OpenAI-compatible API (configurable) |
 | PDF | Puppeteer |
 | Runtime | Node.js 22 LTS |
 | VCS | Git, GitHub |

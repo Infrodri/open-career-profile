@@ -35,7 +35,7 @@
 | Tecnología | Rol |
 |-----------|-----|
 | Tesseract.js | OCR (mediante adaptador) |
-| Ollama | Asistencia IA local (opcional, mediante adaptador) |
+| OpenAI-compatible API | IA (opcional, mediante adaptador — soporta OpenAI, Ollama, OpenRouter, cualquier proveedor compatible) |
 | Puppeteer | Generación de PDF (mediante adaptador) |
 
 ## Tooling e Infraestructura
