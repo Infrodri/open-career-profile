@@ -1,10 +1,12 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { CreateProfilePage } from './pages/CreateProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { ViewProfilePage } from './pages/ViewProfilePage';
 import { DocumentCapturePage } from './pages/DocumentCapturePage';
+import { DocumentsPage } from './pages/DocumentsPage';
+import { GeneratePage } from './pages/GeneratePage';
 
 export function App() {
   return (
@@ -16,6 +18,10 @@ export function App() {
         <Route path="/profile/:id" element={<ViewProfilePage />} />
         <Route path="/profile/:id/edit" element={<EditProfilePage />} />
         <Route path="/documento" element={<DocumentCapturePage />} />
+        <Route path="/documentos" element={<DocumentsPage />} />
+        <Route path="/generar" element={<GeneratePage />} />
+        {/* Anything else goes home instead of rendering a blank page. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   );

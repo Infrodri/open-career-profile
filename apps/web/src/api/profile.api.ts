@@ -1,20 +1,9 @@
 import type {
-  ApiResponse,
   CreateProfilePayload,
   OutputRequest,
   ProfessionalProfile,
 } from '../types/profile';
-
-async function handleResponse<T>(response: Response): Promise<T> {
-  const json: ApiResponse<T> = await response.json();
-
-  if (!response.ok || !json.success) {
-    const errorMessage = !json.success ? json.error.message : 'Request failed';
-    throw new Error(errorMessage);
-  }
-
-  return json.data;
-}
+import { expectNoContent, unwrap } from './http';
 
 export async function createProfile(data: CreateProfilePayload): Promise<ProfessionalProfile> {
   const response = await fetch('/api/profiles', {
@@ -22,12 +11,12 @@ export async function createProfile(data: CreateProfilePayload): Promise<Profess
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  return handleResponse<ProfessionalProfile>(response);
+  return unwrap<ProfessionalProfile>(response);
 }
 
 export async function getProfile(id: string): Promise<ProfessionalProfile> {
   const response = await fetch(`/api/profiles/${id}`);
-  return handleResponse<ProfessionalProfile>(response);
+  return unwrap<ProfessionalProfile>(response);
 }
 
 export async function updateProfile(
@@ -39,16 +28,12 @@ export async function updateProfile(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  return handleResponse<ProfessionalProfile>(response);
+  return unwrap<ProfessionalProfile>(response);
 }
 
 export async function deleteProfile(id: string): Promise<void> {
-  const response = await fetch(`/api/profiles/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) {
-    throw new Error('Failed to delete profile');
-  }
+  const response = await fetch(`/api/profiles/${id}`, { method: 'DELETE' });
+  return expectNoContent(response);
 }
 
 export async function generateOutput(
@@ -62,16 +47,14 @@ export async function generateOutput(
     body: JSON.stringify({ templateId, format }),
   });
 
+  // This endpoint streams a file, so it does not use the JSON envelope on success.
   if (!response.ok) {
-    const text = await response.text();
-    let message = 'Failed to generate output';
+    let message = 'No se pudo generar el documento';
     try {
-      const json = JSON.parse(text);
-      if (json.error?.message) {
-        message = json.error.message;
-      }
+      const json = await response.json();
+      if (json?.error?.message) message = json.error.message;
     } catch {
-      // use default message
+      // keep the default message
     }
     throw new Error(message);
   }

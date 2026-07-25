@@ -21,8 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@ocp/core": "*",
-    "uuid": "11.0.5"
+    "@ocp/core": "*"
   },
   "devDependencies": {
     "vitest": "3.1.4",

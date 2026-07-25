@@ -9,3 +9,7 @@ Thumbs.db
 coverage/
 .turbo/
 .prisma/
+
+# Uploaded documents and their evidence files stay on the user's machine.
+# They are personal data and must never be committed.
+storage/

@@ -1,5 +1,24 @@
-import { type Document, type Evidence } from '@ocp/core';
-import { type DocumentRepository, type DocumentStorage } from '@ocp/core';
+import { randomUUID } from 'node:crypto';
+import {
+  type Document,
+  type DocumentRepository,
+  type DocumentStorage,
+  type DocumentType,
+  type Evidence,
+  type EvidenceTarget,
+  type SectionType,
+} from '@ocp/core';
+
+/** Data needed to store a freshly uploaded file. */
+export interface StoreDocumentInput {
+  buffer: Buffer;
+  fileName: string;
+  mimeType: string;
+  extractedText?: string;
+  documentType?: DocumentType;
+  /** Optional owner. Documents may be uploaded before a profile exists. */
+  profileId?: string;
+}
 
 export class DocumentService {
   constructor(
@@ -8,107 +27,90 @@ export class DocumentService {
   ) {}
 
   /**
-   * Create a new document record (file must be stored first via storage).
+   * Write the file to storage and record it in the database.
+   *
+   * If the database insert fails the stored file is removed, so a failed upload
+   * never leaves an orphan file behind.
    */
-  async create(document: Omit<Document, 'id' | 'createdAt' | 'updatedAt'>): Promise<Document> {
-    const now = new Date();
-    const doc: Document = {
-      ...document,
-      id: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    };
-    return this.repository.create(doc);
+  async store(input: StoreDocumentInput): Promise<Document> {
+    const storagePath = await this.storage.save(input.buffer, input.fileName, input.profileId);
+
+    try {
+      const now = new Date();
+      return await this.repository.create({
+        id: randomUUID(),
+        profileId: input.profileId,
+        fileName: input.fileName,
+        mimeType: input.mimeType,
+        sizeBytes: input.buffer.byteLength,
+        storagePath,
+        documentType: input.documentType,
+        extractedText: input.extractedText,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } catch (err) {
+      await this.storage.delete(storagePath).catch(() => {
+        // Cleanup is best effort; the original error is what matters.
+      });
+      throw err;
+    }
   }
 
-  /**
-   * Find a document by ID.
-   */
-  async findById(id: string): Promise<Document | null> {
+  findById(id: string): Promise<Document | null> {
     return this.repository.findById(id);
   }
 
-  /**
-   * Find all documents for a profile.
-   */
-  async findByProfileId(profileId: string): Promise<Document[]> {
+  findByProfileId(profileId: string): Promise<Document[]> {
     return this.repository.findByProfileId(profileId);
   }
 
-  /**
-   * Delete a document and its file from storage.
-   */
-  async delete(id: string): Promise<void> {
+  findUnassigned(): Promise<Document[]> {
+    return this.repository.findUnassigned();
+  }
+
+  /** Attach a previously uploaded document to a profile. */
+  assignToProfile(documentId: string, profileId: string): Promise<Document> {
+    return this.repository.assignToProfile(documentId, profileId);
+  }
+
+  updateDocumentType(documentId: string, documentType?: DocumentType): Promise<Document> {
+    return this.repository.updateDocumentType(documentId, documentType);
+  }
+
+  /** Delete the document row, its evidence links and the file on disk. */
+  delete(id: string): Promise<void> {
     return this.repository.delete(id);
   }
 
-  /**
-   * Create evidence linking a document to a profile entry.
-   */
-  async createEvidence(
-    documentId: string,
-    sectionType: string,
-    entryId: string,
-    note?: string,
-  ): Promise<Evidence> {
-    const evidence: Evidence = {
-      id: crypto.randomUUID(),
-      documentId,
-      sectionType: sectionType as any,
-      entryId,
-      note: note ?? undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    return this.repository.createEvidence(evidence);
+  /** Link a document to one or more profile entries. */
+  linkEvidence(documentId: string, targets: EvidenceTarget[]): Promise<Evidence[]> {
+    return this.repository.createEvidence(documentId, targets);
   }
 
-  /**
-   * Find all evidences for a document.
-   */
-  async findByDocumentId(documentId: string): Promise<Evidence[]> {
-    return this.repository.findByDocumentId(documentId);
+  findEvidenceByDocumentId(documentId: string): Promise<Evidence[]> {
+    return this.repository.findEvidenceByDocumentId(documentId);
   }
 
-  /**
-   * Find all evidences for a profile entry.
-   */
-  async findByEntry(sectionType: string, entryId: string): Promise<Evidence[]> {
-    return this.repository.findByEntry(sectionType, entryId);
+  findEvidenceByEntry(sectionType: SectionType, entryId: string): Promise<Evidence[]> {
+    return this.repository.findEvidenceByEntry(sectionType, entryId);
   }
 
-  /**
-   * Delete an evidence.
-   */
-  async deleteEvidence(id: string): Promise<void> {
+  findEvidenceByProfileId(profileId: string): Promise<Evidence[]> {
+    return this.repository.findEvidenceByProfileId(profileId);
+  }
+
+  deleteEvidence(id: string): Promise<void> {
     return this.repository.deleteEvidence(id);
   }
 
-  /**
-   * Save a file to storage.
-   */
-  async saveFile(buffer: Buffer, fileName: string): Promise<string> {
-    return this.storage.save(buffer, fileName);
-  }
-
-  /**
-   * Read a file from storage.
-   */
-  async readFile(storagePath: string): Promise<Buffer> {
+  /** Read the stored file for a document. */
+  readFile(storagePath: string): Promise<Buffer> {
     return this.storage.read(storagePath);
   }
 
-  /**
-   * Delete a file from storage.
-   */
-  async deleteFile(storagePath: string): Promise<void> {
-    return this.storage.delete(storagePath);
-  }
-
-  /**
-   * Check if a file exists in storage.
-   */
-  async fileExists(storagePath: string): Promise<boolean> {
+  /** Whether the stored file is still present on disk. */
+  fileExists(storagePath: string): Promise<boolean> {
     return this.storage.exists(storagePath);
   }
 }

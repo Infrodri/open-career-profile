@@ -98,20 +98,65 @@ export interface ProfessionalProfile {
   updatedAt: string;
 }
 
-export interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown[];
 }
 
-export interface ApiErrorResponse {
-  success: false;
-  error: {
-    code: string;
-    message: string;
-  };
+/**
+ * Envelope returned by every API endpoint.
+ * Must mirror ApiResponse in apps/api/src/middleware/error-handler.ts:
+ * exactly one of `data` / `error` is non-null.
+ */
+export interface ApiResponse<T> {
+  data: T | null;
+  error: ApiError | null;
 }
 
-export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+/** Kinds of document the system recognises. Mirrors DOCUMENT_TYPES in @ocp/core. */
+export type DocumentType = 'certificado' | 'titulo' | 'contrato' | 'hoja_de_vida' | 'otro';
+
+/** Profile sections evidence can point at. Mirrors SECTION_TYPES in @ocp/core. */
+export type SectionType =
+  | 'workExperience'
+  | 'education'
+  | 'certifications'
+  | 'courses'
+  | 'skills'
+  | 'languages'
+  | 'projects'
+  | 'publications'
+  | 'awards'
+  | 'affiliations'
+  | 'volunteering'
+  | 'references';
+
+/** An uploaded file kept as the source of truth behind profile entries. */
+export interface StoredDocument {
+  id: string;
+  /** Absent while the document has not been imported into a profile yet. */
+  profileId?: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  documentType?: DocumentType;
+  extractedText?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Link between a document and one specific profile entry. */
+export interface Evidence {
+  id: string;
+  documentId: string;
+  sectionType: SectionType;
+  entryId: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface CreateProfilePayload {
   personalInfo: PersonalInfo;

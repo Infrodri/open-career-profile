@@ -1,7 +1,17 @@
-import { PrismaClient } from '@prisma/client';
-import { type Document, type Evidence } from '@ocp/core';
-import { type DocumentRepository, type DocumentStorage } from '@ocp/core';
-import { toDomainDocument, toDomainEvidence, documentIncludeWithEvidences } from './mappers/document.mapper.js';
+import { type PrismaClient } from '@prisma/client';
+import {
+  type Document,
+  type DocumentRepository,
+  type DocumentStorage,
+  type Evidence,
+  type EvidenceTarget,
+  type SectionType,
+} from '@ocp/core';
+import {
+  toDomainDocument,
+  toDomainEvidence,
+  documentIncludeWithEvidences,
+} from './mappers/document.mapper.js';
 
 export class PrismaDocumentRepository implements DocumentRepository {
   constructor(
@@ -13,7 +23,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
     const result = await this.prisma.document.create({
       data: {
         id: document.id,
-        profileId: document.profileId,
+        profileId: document.profileId ?? null,
         fileName: document.fileName,
         mimeType: document.mimeType,
         sizeBytes: document.sizeBytes,
@@ -33,60 +43,108 @@ export class PrismaDocumentRepository implements DocumentRepository {
       include: documentIncludeWithEvidences,
     });
 
-    if (!result) return null;
-    return toDomainDocument(result);
+    return result ? toDomainDocument(result) : null;
   }
 
   async findByProfileId(profileId: string): Promise<Document[]> {
     const results = await this.prisma.document.findMany({
       where: { profileId },
       include: documentIncludeWithEvidences,
+      orderBy: { createdAt: 'desc' },
     });
 
     return results.map(toDomainDocument);
   }
 
+  async findUnassigned(): Promise<Document[]> {
+    const results = await this.prisma.document.findMany({
+      where: { profileId: null },
+      include: documentIncludeWithEvidences,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return results.map(toDomainDocument);
+  }
+
+  async assignToProfile(documentId: string, profileId: string): Promise<Document> {
+    const result = await this.prisma.document.update({
+      where: { id: documentId },
+      data: { profileId },
+      include: documentIncludeWithEvidences,
+    });
+
+    return toDomainDocument(result);
+  }
+
+  async updateDocumentType(
+    documentId: string,
+    documentType: Document['documentType'],
+  ): Promise<Document> {
+    const result = await this.prisma.document.update({
+      where: { id: documentId },
+      data: { documentType: documentType ?? null },
+      include: documentIncludeWithEvidences,
+    });
+
+    return toDomainDocument(result);
+  }
+
   async delete(id: string): Promise<void> {
-    // Find document first to get storage path
     const document = await this.prisma.document.findUnique({
       where: { id },
       select: { storagePath: true },
     });
 
-    if (document) {
-      // Delete from storage
-      await this.storage.delete(document.storagePath);
-    }
+    if (!document) return;
 
-    // Delete from DB
+    // Remove the DB row first: if the row is gone the file is unreachable anyway,
+    // whereas deleting the file first could leave a row pointing at nothing.
+    // Evidence rows cascade via the schema.
     await this.prisma.document.delete({ where: { id } });
+    await this.storage.delete(document.storagePath);
   }
 
-  async createEvidence(evidence: Evidence): Promise<Evidence> {
-    const result = await this.prisma.evidence.create({
-      data: {
-        id: evidence.id,
-        documentId: evidence.documentId,
-        sectionType: evidence.sectionType,
-        entryId: evidence.entryId,
-        note: evidence.note ?? null,
-      },
+  async createEvidence(documentId: string, targets: EvidenceTarget[]): Promise<Evidence[]> {
+    if (targets.length === 0) return [];
+
+    // skipDuplicates relies on the @@unique([documentId, sectionType, entryId])
+    // constraint, so re-linking the same entry is idempotent.
+    await this.prisma.evidence.createMany({
+      data: targets.map((target) => ({
+        documentId,
+        sectionType: target.sectionType,
+        entryId: target.entryId,
+        note: target.note ?? null,
+      })),
+      skipDuplicates: true,
     });
 
-    return toDomainEvidence(result);
-  }
-
-  async findByDocumentId(documentId: string): Promise<Evidence[]> {
     const results = await this.prisma.evidence.findMany({
-      where: { documentId },
+      where: {
+        documentId,
+        OR: targets.map((target) => ({
+          sectionType: target.sectionType,
+          entryId: target.entryId,
+        })),
+      },
     });
 
     return results.map(toDomainEvidence);
   }
 
-  async findByEntry(sectionType: string, entryId: string): Promise<Evidence[]> {
+  async findEvidenceByDocumentId(documentId: string): Promise<Evidence[]> {
+    const results = await this.prisma.evidence.findMany({ where: { documentId } });
+    return results.map(toDomainEvidence);
+  }
+
+  async findEvidenceByEntry(sectionType: SectionType, entryId: string): Promise<Evidence[]> {
+    const results = await this.prisma.evidence.findMany({ where: { sectionType, entryId } });
+    return results.map(toDomainEvidence);
+  }
+
+  async findEvidenceByProfileId(profileId: string): Promise<Evidence[]> {
     const results = await this.prisma.evidence.findMany({
-      where: { sectionType, entryId },
+      where: { document: { profileId } },
     });
 
     return results.map(toDomainEvidence);

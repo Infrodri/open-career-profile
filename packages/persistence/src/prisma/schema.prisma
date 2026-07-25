@@ -204,7 +204,9 @@ model Reference {
 
 model Document {
   id            String   @id @default(uuid())
-  profileId     String
+  // Optional: a document can be uploaded before any profile exists.
+  // It gets linked to a profile when the extracted data is imported.
+  profileId     String?
   fileName      String
   mimeType      String
   sizeBytes     Int
@@ -213,8 +215,10 @@ model Document {
   extractedText String? @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile       Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
   evidences     Evidence[]
+
+  @@index([profileId])
 }
 
 model Evidence {
@@ -226,4 +230,7 @@ model Evidence {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, sectionType, entryId])
+  @@index([sectionType, entryId])
 }

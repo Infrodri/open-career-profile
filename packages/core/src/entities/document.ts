@@ -5,7 +5,11 @@ import { type BaseEntity } from '../value-objects/index.js';
  * A document can be linked to multiple profile entries via Evidence.
  */
 export interface Document extends BaseEntity {
-  profileId: string;
+  /**
+   * Optional: a document can exist before any profile does.
+   * It is linked to a profile when its extracted data is imported.
+   */
+  profileId?: string;
   fileName: string;
   mimeType: string;
   sizeBytes: number;
@@ -48,3 +52,13 @@ export const SECTION_TYPES = [
   'references',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
+
+/** Type guard for SectionType, so callers never need to cast. */
+export function isSectionType(value: unknown): value is SectionType {
+  return typeof value === 'string' && (SECTION_TYPES as readonly string[]).includes(value);
+}
+
+/** Type guard for DocumentType. */
+export function isDocumentType(value: unknown): value is DocumentType {
+  return typeof value === 'string' && (DOCUMENT_TYPES as readonly string[]).includes(value);
+}

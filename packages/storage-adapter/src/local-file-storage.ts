@@ -1,110 +1,95 @@
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { type DocumentStorage } from '@ocp/core';
-import { v7 as uuidv7 } from 'uuid';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+/** Directory used when a document has no owning profile yet. */
+const UNASSIGNED_DIR = 'unassigned';
+
+/**
+ * Turn an arbitrary file name into a safe, readable suffix.
+ * Strips directories and anything that is not alphanumeric, dot, dash or underscore.
+ */
+function sanitizeFileName(fileName: string): string {
+  const baseName = fileName.split(/[\\/]/).pop() ?? 'file';
+  const cleaned = baseName.replace(/[^a-zA-Z0-9._-]/g, '_').replace(/^\.+/, '');
+  return cleaned.length > 0 ? cleaned.slice(0, 120) : 'file';
+}
 
 /**
  * Local filesystem storage for documents.
- * Files are stored under OCP_STORAGE_PATH (default: ./storage/documents)
- * Organized as {profileId}/{uuid}-{fileName} to avoid collisions.
+ *
+ * Files live under `basePath` (default: ./storage/documents relative to the
+ * process working directory, overridable via OCP_STORAGE_PATH by the caller).
+ *
+ * Layout: `{profileId | unassigned}/{uuid}-{safeFileName}`
+ *
+ * Storage paths always use forward slashes so a database row stays valid if the
+ * data is moved between operating systems.
  */
 export class LocalFileStorage implements DocumentStorage {
   private readonly basePath: string;
 
-  constructor(basePath?: string) {
-    // Default to ./storage/documents relative to package root
-    this.basePath = resolve(basePath ?? join(__dirname, '..', '..', 'storage', 'documents'));
+  constructor(basePath = './storage/documents') {
+    this.basePath = resolve(basePath);
+  }
+
+  /** Absolute base directory, exposed for diagnostics and tests. */
+  getBasePath(): string {
+    return this.basePath;
   }
 
   /**
-   * Get the full path for a storage identifier.
-   * @param storagePath - The storage path (relative to base path)
-   * @returns Absolute filesystem path
+   * Resolve a storage path to an absolute filesystem path, rejecting anything
+   * that would escape the base directory (defense against path traversal).
    */
-  private getPath(storagePath: string): string {
-    return join(this.basePath, storagePath);
+  private resolveInsideBase(storagePath: string): string {
+    if (isAbsolute(storagePath)) {
+      throw new Error('Invalid storage path: absolute paths are not allowed');
+    }
+
+    // Normalize the separators we produce in save() back to the OS convention.
+    const normalized = storagePath.split('/').join(sep);
+    const fullPath = resolve(this.basePath, normalized);
+    const rel = relative(this.basePath, fullPath);
+
+    if (rel.startsWith('..') || isAbsolute(rel)) {
+      throw new Error('Invalid storage path: escapes the storage directory');
+    }
+
+    return fullPath;
   }
 
-  /**
-   * Generate a unique storage path for a file.
-   * @param fileName - Original file name
-   * @param profileId - Profile ID for organization
-   * @returns Storage path like "profile-uuid/unique-id-original-name.pdf"
-   */
-  private generateStoragePath(fileName: string, profileId: string): string {
-    const cleanName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const uniqueId = uuidv7();
-    return join(profileId, `${uniqueId}-${cleanName}`);
-  }
+  async save(buffer: Buffer, fileName: string, profileId?: string): Promise<string> {
+    const folder = profileId && profileId.trim() !== '' ? profileId : UNASSIGNED_DIR;
+    // Storage paths are always '/'-separated, independent of the host OS.
+    const storagePath = `${sanitizeFileName(folder)}/${randomUUID()}-${sanitizeFileName(fileName)}`;
+    const fullPath = this.resolveInsideBase(storagePath);
 
-  async save(buffer: Buffer, fileName: string): Promise<string> {
-    // Extract profileId from filename if present (format: "profile-{id}-{rest}")
-    // Otherwise use a placeholder (not ideal but matches current document.routes.ts behavior)
-    const profileId = this.extractProfileIdFromFileName(fileName) ?? 'unknown';
-
-    const storagePath = this.generateStoragePath(fileName, profileId);
-    const fullPath = this.getPath(storagePath);
-
-    // Ensure directory exists
     await mkdir(dirname(fullPath), { recursive: true });
-
-    // Write file
     await writeFile(fullPath, buffer);
 
     return storagePath;
   }
 
   async read(storagePath: string): Promise<Buffer> {
-    const fullPath = this.getPath(storagePath);
-    return await readFile(fullPath);
+    return readFile(this.resolveInsideBase(storagePath));
   }
 
   async delete(storagePath: string): Promise<void> {
-    const fullPath = this.getPath(storagePath);
-    try {
-      await rm(fullPath, { recursive: true, force: true });
-    } catch (err) {
-      // File might not exist, which is OK
-      if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-        return;
-      }
-      throw err;
-    }
+    // force: true makes this a no-op when the file is already gone.
+    await rm(this.resolveInsideBase(storagePath), { force: true });
   }
 
   async exists(storagePath: string): Promise<boolean> {
-    const fullPath = this.getPath(storagePath);
     try {
-      await stat(fullPath);
-      return true;
+      const stats = await stat(this.resolveInsideBase(storagePath));
+      return stats.isFile();
     } catch {
       return false;
     }
   }
-
-  /**
-   * Extract profile ID from filename if present.
-   * Expected format: "profile-{id}-{rest}" or "{id}-{rest}"
-   * @param fileName - The original file name
-   * @returns Profile ID if found, undefined otherwise
-   */
-  private extractProfileIdFromFileName(fileName: string): string | undefined {
-    // Try "profile-{id}-{rest}" format first
-    const profileMatch = fileName.match(/^profile-([a-f0-9-]+)-/i);
-    if (profileMatch) {
-      return profileMatch[1];
-    }
-
-    // Try "{id}-{rest}" format (UUID prefix)
-    const uuidMatch = fileName.match(/^([a-f0-9-]{36})-/i);
-    if (uuidMatch) {
-      return uuidMatch[1];
-    }
-
-    return undefined;
-  }
 }
+
+/** Exported for tests and diagnostics. */
+export { UNASSIGNED_DIR, sanitizeFileName };

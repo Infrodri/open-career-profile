@@ -2,13 +2,16 @@ import { Router, type Request, type Response } from 'express';
 import {
   createProfile,
   createEntry,
-  type WorkExperience,
-  type Education,
   type Certification,
   type Course,
-  type Skill,
+  type Education,
+  type EvidenceTarget,
   type Language,
   type PersonalInfo,
+  type ProfileSections,
+  type SectionType,
+  type Skill,
+  type WorkExperience,
 } from '@ocp/core';
 import { type ProfileService } from '../services/profile.service.js';
 import { type DocumentService } from '../services/document.service.js';
@@ -18,8 +21,21 @@ interface ImportBody {
   personalInfo: Record<string, string>;
   sections: Record<string, Array<Record<string, string>>>;
   profileId?: string;
+  /** When present, every entry created by this import is linked to that document. */
   documentId?: string;
 }
+
+/** Sections the AI extraction pipeline currently produces. */
+const IMPORTABLE_SECTIONS = [
+  'workExperience',
+  'education',
+  'certifications',
+  'courses',
+  'skills',
+  'languages',
+] as const satisfies readonly SectionType[];
+
+type ImportableSection = (typeof IMPORTABLE_SECTIONS)[number];
 
 function buildPersonalInfo(raw: Record<string, string>): PersonalInfo {
   return {
@@ -35,7 +51,10 @@ function buildPersonalInfo(raw: Record<string, string>): PersonalInfo {
   };
 }
 
-function buildSections(raw: Record<string, Array<Record<string, string>>>) {
+/** Only the sections this endpoint knows how to build, each with real entry ids. */
+type ImportedSections = Pick<ProfileSections, ImportableSection>;
+
+function buildSections(raw: Record<string, Array<Record<string, string>>>): ImportedSections {
   return {
     workExperience: (raw['workExperience'] ?? [])
       .filter((e) => e['position'] || e['institution'])
@@ -103,19 +122,26 @@ function buildSections(raw: Record<string, Array<Record<string, string>>>) {
           certification: e['certification'] || undefined,
         }),
       ),
-    projects: [],
-    publications: [],
-    awards: [],
-    affiliations: [],
-    volunteering: [],
-    references: [],
   };
 }
 
-export function createProfileImportRoutes(service: ProfileService, documentService: DocumentService): Router {
+/**
+ * Build one evidence target per entry created by this import, carrying the real
+ * entry id and the section the entry actually belongs to.
+ */
+function buildEvidenceTargets(sections: ImportedSections): EvidenceTarget[] {
+  return IMPORTABLE_SECTIONS.flatMap((sectionType) =>
+    sections[sectionType].map((entry) => ({ sectionType, entryId: entry.id })),
+  );
+}
+
+export function createProfileImportRoutes(
+  service: ProfileService,
+  documentService: DocumentService,
+): Router {
   const router = Router();
 
-  // POST /api/profiles/import — Crea o actualiza un perfil desde datos extraídos por IA
+  // POST /api/profiles/import — creates or extends a profile from AI-extracted data
   router.post('/import', async (req: Request, res: Response) => {
     try {
       const body = req.body as ImportBody;
@@ -125,10 +151,19 @@ export function createProfileImportRoutes(service: ProfileService, documentServi
         return;
       }
 
+      // Validate the document up front so we never half-import.
+      if (body.documentId && !(await documentService.findById(body.documentId))) {
+        res.status(404).json(failure('DOCUMENT_NOT_FOUND', 'El documento indicado no existe'));
+        return;
+      }
+
       const personalInfo = buildPersonalInfo(body.personalInfo);
       const newSections = buildSections(body.sections ?? {});
+      const evidenceTargets = buildEvidenceTargets(newSections);
 
-      // Si hay profileId, actualizar el perfil existente agregando los datos
+      let profileId: string;
+      let result;
+
       if (body.profileId) {
         const existing = await service.findById(body.profileId);
         if (!existing) {
@@ -143,50 +178,29 @@ export function createProfileImportRoutes(service: ProfileService, documentServi
           ),
         };
 
-        existing.sections.workExperience.push(...newSections.workExperience);
-        existing.sections.education.push(...newSections.education);
-        existing.sections.certifications.push(...newSections.certifications);
-        existing.sections.courses.push(...newSections.courses);
-        existing.sections.skills.push(...newSections.skills);
-        existing.sections.languages.push(...newSections.languages);
-
-        const updated = await service.updateDirect(existing);
-        // Vincular el documento si se proporcionó
-        if (body.documentId) {
-          // Crear evidencia para todas las secciones añadidas
-          for (const section of ['workExperience', 'education', 'certifications', 'courses', 'skills', 'languages']) {
-            const sectionData = body.sections?.[section] as Array<Record<string, string>> | undefined;
-            if (sectionData) {
-              for (const _ of sectionData) {
-                await documentService.createEvidence(body.documentId!, section, '');
-              }
-            }
-          }
+        for (const sectionType of IMPORTABLE_SECTIONS) {
+          // Cast is safe: each section array holds entries of its own type.
+          (existing.sections[sectionType] as unknown[]).push(...newSections[sectionType]);
         }
-        res.json(success(updated));
-        return;
+
+        result = await service.updateDirect(existing);
+        profileId = existing.id;
+      } else {
+        const profile = createProfile(personalInfo);
+        profile.sections = { ...profile.sections, ...newSections };
+        result = await service.createDirect(profile);
+        profileId = result.id;
       }
 
-      // Crear un perfil nuevo
-      const profile = createProfile(personalInfo);
-      profile.sections = newSections;
-
-      const created = await service.createDirect(profile);
-      // Vincular el documento si se proporcionó
+      // Link the document to the profile and to every entry it produced.
       if (body.documentId) {
-        const entryIds = [
-          ...profile.sections.workExperience.map(e => e.id),
-          ...profile.sections.education.map(e => e.id),
-          ...profile.sections.certifications.map(e => e.id),
-          ...profile.sections.courses.map(e => e.id),
-          ...profile.sections.skills.map(e => e.id),
-          ...profile.sections.languages.map(e => e.id),
-        ];
-        for (const entryId of entryIds) {
-          await documentService.createEvidence(body.documentId!, 'workExperience', entryId);
+        await documentService.assignToProfile(body.documentId, profileId);
+        if (evidenceTargets.length > 0) {
+          await documentService.linkEvidence(body.documentId, evidenceTargets);
         }
       }
-      res.status(201).json(success(created));
+
+      res.status(body.profileId ? 200 : 201).json(success(result));
     } catch (err) {
       console.error('[Import Error]', err);
       const message = err instanceof Error ? err.message : 'Error al importar el perfil';

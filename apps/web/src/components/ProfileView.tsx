@@ -1,11 +1,32 @@
-import type { ProfessionalProfile } from '../types/profile';
+import { useMemo } from 'react';
+import type { Evidence, ProfessionalProfile, SectionType } from '../types/profile';
+import { EvidenceBadge } from './EvidenceBadge';
 
 interface ProfileViewProps {
   profile: ProfessionalProfile;
+  /** Evidence links for this profile. Optional: the view works without them. */
+  evidence?: Evidence[];
 }
 
-export function ProfileView({ profile }: ProfileViewProps) {
+export function ProfileView({ profile, evidence = [] }: ProfileViewProps) {
   const { personalInfo, sections } = profile;
+
+  /** Evidence indexed by "sectionType:entryId" for O(1) lookup per entry. */
+  const evidenceByEntry = useMemo(() => {
+    const map = new Map<string, Evidence[]>();
+    for (const link of evidence) {
+      const key = `${link.sectionType}:${link.entryId}`;
+      const list = map.get(key) ?? [];
+      list.push(link);
+      map.set(key, list);
+    }
+    return map;
+  }, [evidence]);
+
+  const linksFor = (sectionType: SectionType, entryId: string): Evidence[] =>
+    evidenceByEntry.get(`${sectionType}:${entryId}`) ?? [];
+
+  const backedCount = evidence.length;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto px-6 py-8">
@@ -41,6 +62,18 @@ export function ProfileView({ profile }: ProfileViewProps) {
             ))}
           </div>
         )}
+        {backedCount > 0 && (
+          <p className="mt-4 inline-flex items-center gap-1.5 text-xs text-green-700 dark:text-green-400">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z"
+                clipRule="evenodd"
+              />
+            </svg>
+            El clip indica que la información tiene un documento que la respalda
+          </p>
+        )}
       </section>
 
       {/* Experiencia Laboral */}
@@ -52,7 +85,10 @@ export function ProfileView({ profile }: ProfileViewProps) {
           <div className="space-y-4">
             {sections.workExperience.map((exp) => (
               <div key={exp.id} className="border-l-4 border-blue-600 pl-4">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">{exp.position}</h4>
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  {exp.position}
+                  <EvidenceBadge links={linksFor('workExperience', exp.id)} />
+                </h4>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {exp.institution}
                   {exp.location && ` — ${exp.location}`}
@@ -83,7 +119,10 @@ export function ProfileView({ profile }: ProfileViewProps) {
           <div className="space-y-4">
             {sections.education.map((edu) => (
               <div key={edu.id} className="border-l-4 border-green-600 pl-4">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">{edu.title}</h4>
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  {edu.title}
+                  <EvidenceBadge links={linksFor('education', edu.id)} />
+                </h4>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {edu.institution}
                   {edu.field && ` — ${edu.field}`}
@@ -110,12 +149,13 @@ export function ProfileView({ profile }: ProfileViewProps) {
             {sections.skills.map((skill) => (
               <span
                 key={skill.id}
-                className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-sm rounded-full"
+                className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-sm rounded-full"
               >
                 {skill.name}
                 {skill.level && (
-                  <span className="ml-1 text-blue-600 dark:text-blue-400 text-xs">({skill.level})</span>
+                  <span className="text-blue-600 dark:text-blue-400 text-xs">({skill.level})</span>
                 )}
+                <EvidenceBadge links={linksFor('skills', skill.id)} />
               </span>
             ))}
           </div>
@@ -130,9 +170,10 @@ export function ProfileView({ profile }: ProfileViewProps) {
             {sections.languages.map((lang) => (
               <span
                 key={lang.id}
-                className="px-3 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 text-sm rounded-full"
+                className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 text-sm rounded-full"
               >
                 {lang.name} — {lang.level}
+                <EvidenceBadge links={linksFor('languages', lang.id)} />
               </span>
             ))}
           </div>
@@ -146,7 +187,10 @@ export function ProfileView({ profile }: ProfileViewProps) {
           <div className="space-y-3">
             {sections.certifications.map((cert) => (
               <div key={cert.id} className="border-l-4 border-amber-500 pl-4">
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100">{cert.name}</h4>
+                <h4 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  {cert.name}
+                  <EvidenceBadge links={linksFor('certifications', cert.id)} />
+                </h4>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{cert.issuer}</p>
                 {cert.issueDate && (
                   <p className="text-xs text-slate-400 dark:text-slate-500">
