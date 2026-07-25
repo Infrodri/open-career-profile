@@ -134,11 +134,16 @@ export function createProfileImportRoutes(
           existing.personalInfo.profesiones = [...existingSet];
         }
 
-        // Append new entries to each section
+        // Append new entries to each section (skip duplicates)
         for (const key of PROFILE_SECTION_KEYS) {
-          const newEntries = (newSections as any)[key] as unknown[];
-          if (newEntries && newEntries.length > 0) {
-            ((existing.sections as any)[key] as unknown[]).push(...newEntries);
+          const newEntries = (newSections as any)[key] as Array<Record<string, unknown>>;
+          if (!newEntries || newEntries.length === 0) continue;
+
+          const existingEntries = (existing.sections as any)[key] as Array<Record<string, unknown>>;
+          for (const entry of newEntries) {
+            if (!isDuplicate(entry, existingEntries)) {
+              existingEntries.push(entry);
+            }
           }
         }
 
@@ -169,4 +174,44 @@ export function createProfileImportRoutes(
   });
 
   return router;
+}
+
+/**
+ * Check if a new entry would be a duplicate of an existing one.
+ * Compares by the "identity" fields: title/name + institution/issuer + date.
+ * This prevents the same certificate from being added twice when the user
+ * uploads the same document again.
+ */
+function isDuplicate(
+  newEntry: Record<string, unknown>,
+  existingEntries: Array<Record<string, unknown>>,
+): boolean {
+  // Extract the key fields that identify an entry
+  const newTitle = normalize(newEntry['title'] ?? newEntry['name'] ?? newEntry['position']);
+  const newInstitution = normalize(newEntry['institution'] ?? newEntry['issuer']);
+  const newDate = normalize(newEntry['startDate'] ?? newEntry['issueDate']);
+
+  if (!newTitle) return false; // Can't determine identity without at least a title
+
+  for (const existing of existingEntries) {
+    const existingTitle = normalize(existing['title'] ?? existing['name'] ?? existing['position']);
+    const existingInstitution = normalize(existing['institution'] ?? existing['issuer']);
+    const existingDate = normalize(existing['startDate'] ?? existing['issueDate']);
+
+    // Match: same title AND (same institution OR same date)
+    if (existingTitle === newTitle) {
+      if (existingInstitution === newInstitution) return true;
+      if (newDate && existingDate === newDate) return true;
+      // If title matches exactly and institution/date are both empty, it's still a duplicate
+      if (!newInstitution && !existingInstitution) return true;
+    }
+  }
+
+  return false;
+}
+
+/** Normalize a value for comparison: trim, lowercase, remove extra spaces. */
+function normalize(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  return String(value).trim().toLowerCase().replace(/\s+/g, ' ');
 }

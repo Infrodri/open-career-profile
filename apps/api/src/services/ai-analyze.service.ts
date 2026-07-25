@@ -53,8 +53,11 @@ JSON: [{"name":"","issuer":"","issueDate":"AAAA","contenido":["tema1","tema2"]}]
   certificacionesSistemasInstitucionales: `Extrae SOLO certificaciones de sistemas institucionales (SIREJ, REJAP, Derechos Reales, sistemas de gobierno).
 JSON: [{"name":"","issuer":"","issueDate":"AAAA","contenido":[]}]`,
 
-  cursosAdministrativos: `Extrae SOLO cursos/talleres administrativos, normativos, leyes, ética pública, archivística.
-JSON: [{"name":"","issuer":"","issueDate":"AAAA","detalle":""}]`,
+  cursosAdministrativos: `Extrae SOLO cursos/talleres/capacitaciones administrativas, normativas, leyes, ética pública, archivística que la persona COMPLETÓ o APROBÓ.
+INCLUYE: certificados de capacitación, cursos de leyes (1178, 045, etc), talleres normativos, capacitaciones sobre funciones públicas, "Responsabilidad a la Función Pública", seguridad ciudadana, prevención de violencia, gestión documental.
+NO INCLUYE: memorandos de felicitación internos (esos van en reconocimientosLaborales).
+Si dice "por haber obtenido un nivel de COMPETENCIA" o "evento de capacitación" o "91 puntos", ES un curso.
+JSON: [{"name":"nombre del curso/capacitación","issuer":"institución que lo dictó","issueDate":"AAAA","detalle":"descripción"}]`,
 
   cursosProgramacion: `Extrae SOLO cursos de programación, herramientas de desarrollo (VS Code, Power BI, SIGEP, etc).
 JSON: [{"name":"","issuer":"","issueDate":"AAAA","contenido":[]}]`,
@@ -71,8 +74,11 @@ JSON: [{"name":"","issuer":"","issueDate":"AAAA","detalle":""}]`,
   reconocimientosRepresentacion: `Extrae SOLO reconocimientos por representación, organización, delegado, apoyo institucional.
 JSON: [{"name":"","issuer":"","issueDate":"AAAA","detalle":""}]`,
 
-  reconocimientosLaborales: `Extrae SOLO memorandos de felicitación, reconocimientos laborales internos.
-JSON: [{"name":"","issuer":"","issueDate":"AAAA","detalle":""}]`,
+  reconocimientosLaborales: `Extrae SOLO memorandos internos de felicitación o reconocimiento por buen desempeño laboral.
+INCLUYE SOLO: memorandos (ej: "MEMORANDO RD-CM-PT-014/2021"), notas de felicitación de jefes, reconocimientos por "labor desempeñada".
+NO INCLUYE: certificados de cursos/capacitaciones completadas (aunque digan "reconocimiento" en el título, si es por COMPLETAR una capacitación va en cursosAdministrativos).
+REGLA CLAVE: Si el documento menciona "evento de capacitación", "competencia completa", "91 puntos" o similar, es un CURSO no un reconocimiento.
+JSON: [{"name":"","issuer":"","issueDate":"AAAA","detalle":"","motivo":""}]`,
 
   languages: `Extrae SOLO idiomas que la persona habla/maneja.
 JSON: [{"name":"","level":"basic|intermediate|advanced|native"}]`,
