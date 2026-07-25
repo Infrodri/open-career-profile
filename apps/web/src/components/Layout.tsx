@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { AiStatusBadge } from './AiStatusBadge';
 
 interface LayoutProps {
   children: ReactNode;
@@ -104,6 +105,10 @@ export function Layout({ children }: LayoutProps) {
             </Link>
           ))}
         </nav>
+        {/* AI connection status */}
+        <div className="px-4 pb-4 border-t border-slate-200 dark:border-slate-700 pt-3">
+          <AiStatusBadge />
+        </div>
       </aside>
 
       {/* Main content */}

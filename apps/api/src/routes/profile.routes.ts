@@ -1,6 +1,4 @@
 import { Router, type Request, type Response } from 'express';
-import { createProfileSchema } from '@ocp/core';
-import { validate } from '../middleware/validate.js';
 import { success, failure } from '../middleware/error-handler.js';
 import { type ProfileService } from '../services/profile.service.js';
 
@@ -8,7 +6,7 @@ export function createProfileRoutes(service: ProfileService): Router {
   const router = Router();
 
   // POST /api/profiles — Create a new profile
-  router.post('/', validate(createProfileSchema), async (req: Request, res: Response) => {
+  router.post('/', async (req: Request, res: Response) => {
     try {
       const profile = await service.create(req.body);
       res.status(201).json(success(profile));
@@ -35,7 +33,7 @@ export function createProfileRoutes(service: ProfileService): Router {
   });
 
   // PUT /api/profiles/:id — Update a profile
-  router.put('/:id', validate(createProfileSchema), async (req: Request, res: Response) => {
+  router.put('/:id', async (req: Request, res: Response) => {
     try {
       const id = req.params['id'] as string;
       const profile = await service.update(id, req.body);

@@ -36,24 +36,29 @@ export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 
 /**
  * Section types where evidence can be linked.
+ * Matches the keys of ProfileSections exactly.
  */
 export const SECTION_TYPES = [
-  'workExperience',
-  'education',
-  'certifications',
-  'courses',
-  'skills',
-  'languages',
-  'projects',
-  'publications',
-  'awards',
-  'affiliations',
-  'volunteering',
-  'references',
+  'formacionAcademica',
+  'postgrado',
+  'cursosEspecialidad',
+  'certificacionesCiberseguridad',
+  'certificacionesSistemasInstitucionales',
+  'cursosAdministrativos',
+  'cursosProgramacion',
+  'cursosGenerales',
+  'experienciaAdministrativa',
+  'experienciaDocente',
+  'experienciaDesarrollo',
+  'reconocimientosExpositor',
+  'reconocimientosRepresentacion',
+  'reconocimientosLaborales',
+  'idiomas',
+  'habilidades',
 ] as const;
 export type SectionType = (typeof SECTION_TYPES)[number];
 
-/** Type guard for SectionType, so callers never need to cast. */
+/** Type guard for SectionType. */
 export function isSectionType(value: unknown): value is SectionType {
   return typeof value === 'string' && (SECTION_TYPES as readonly string[]).includes(value);
 }

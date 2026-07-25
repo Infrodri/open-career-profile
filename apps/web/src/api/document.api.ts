@@ -1,22 +1,15 @@
 import type {
   DocumentType,
   Evidence,
-  SectionType,
+  SectionKey,
   StoredDocument,
 } from '../types/profile';
 import { expectNoContent, unwrap } from './http';
 
 export interface ProfileAnalysis {
   documentType: string;
-  personalInfo: Record<string, string>;
-  sections: {
-    workExperience: Array<Record<string, string>>;
-    education: Array<Record<string, string>>;
-    certifications: Array<Record<string, string>>;
-    courses: Array<Record<string, string>>;
-    skills: Array<Record<string, string>>;
-    languages: Array<Record<string, string>>;
-  };
+  personalInfo: Record<string, unknown>;
+  sections: Record<string, Array<Record<string, unknown>>>;
   recommendations: string[];
   confidence: number;
 }
@@ -63,7 +56,7 @@ export async function analyzeDocumentText(text: string): Promise<ProfileAnalysis
  * Passing `documentId` links the uploaded document to every entry created here.
  */
 export async function importProfile(
-  personalInfo: Record<string, string>,
+  personalInfo: Record<string, unknown>,
   sections: ProfileAnalysis['sections'],
   options: { profileId?: string; documentId?: string } = {},
 ): Promise<{ id: string }> {
@@ -117,7 +110,7 @@ export async function updateDocumentType(
 
 export async function linkEvidence(
   documentId: string,
-  targets: Array<{ sectionType: SectionType; entryId: string; note?: string }>,
+  targets: Array<{ sectionType: SectionKey; entryId: string; note?: string }>,
 ): Promise<Evidence[]> {
   const response = await fetch(`/api/documents/${documentId}/evidence`, {
     method: 'POST',

@@ -2,137 +2,78 @@ import { Router, type Request, type Response } from 'express';
 import {
   createProfile,
   createEntry,
-  type Certification,
-  type Course,
-  type Education,
-  type EvidenceTarget,
-  type Language,
+  createEmptySections,
   type PersonalInfo,
   type ProfileSections,
+  type EvidenceTarget,
   type SectionType,
-  type Skill,
-  type WorkExperience,
+  PROFILE_SECTION_KEYS,
+  type BaseEntity,
 } from '@ocp/core';
 import { type ProfileService } from '../services/profile.service.js';
 import { type DocumentService } from '../services/document.service.js';
 import { success, failure } from '../middleware/error-handler.js';
 
 interface ImportBody {
-  personalInfo: Record<string, string>;
-  sections: Record<string, Array<Record<string, string>>>;
+  personalInfo: Record<string, unknown>;
+  sections: Record<string, Array<Record<string, unknown>>>;
   profileId?: string;
   /** When present, every entry created by this import is linked to that document. */
   documentId?: string;
+  /**
+   * When true (single document upload), entries are marked as verified.
+   * When false/absent (CV base upload), entries are unverified.
+   */
+  verified?: boolean;
 }
 
-/** Sections the AI extraction pipeline currently produces. */
-const IMPORTABLE_SECTIONS = [
-  'workExperience',
-  'education',
-  'certifications',
-  'courses',
-  'skills',
-  'languages',
-] as const satisfies readonly SectionType[];
-
-type ImportableSection = (typeof IMPORTABLE_SECTIONS)[number];
-
-function buildPersonalInfo(raw: Record<string, string>): PersonalInfo {
+function buildPersonalInfo(raw: Record<string, unknown>): PersonalInfo {
   return {
-    fullName: raw['fullName'] || 'Sin nombre',
-    email: raw['email'] || undefined,
-    phone: raw['phone'] || undefined,
-    city: raw['city'] || undefined,
-    country: raw['country'] || undefined,
-    summary: raw['summary'] || undefined,
-    birthDate: raw['birthDate'] || undefined,
-    identityDocument: raw['identityDocument'] || undefined,
+    fullName: String(raw['fullName'] ?? 'Sin nombre'),
+    profesiones: Array.isArray(raw['profesiones']) ? raw['profesiones'].map(String) : [],
+    email: raw['email'] ? String(raw['email']) : undefined,
+    phone: raw['phone'] ? String(raw['phone']) : undefined,
+    city: raw['city'] ? String(raw['city']) : undefined,
+    country: raw['country'] ? String(raw['country']) : undefined,
+    nacionalidad: raw['nacionalidad'] ? String(raw['nacionalidad']) : undefined,
+    sexo: raw['sexo'] ? String(raw['sexo']) : undefined,
+    estadoCivil: raw['estadoCivil'] ? String(raw['estadoCivil']) : undefined,
+    summary: raw['summary'] ? String(raw['summary']) : undefined,
+    birthDate: raw['birthDate'] ? String(raw['birthDate']) : undefined,
+    identityDocument: raw['identityDocument'] ? String(raw['identityDocument']) : undefined,
+    libretaMilitar: raw['libretaMilitar'] ? String(raw['libretaMilitar']) : undefined,
     links: [],
   };
 }
 
-/** Only the sections this endpoint knows how to build, each with real entry ids. */
-type ImportedSections = Pick<ProfileSections, ImportableSection>;
-
-function buildSections(raw: Record<string, Array<Record<string, string>>>): ImportedSections {
-  return {
-    workExperience: (raw['workExperience'] ?? [])
-      .filter((e) => e['position'] || e['institution'])
-      .map((e) =>
-        createEntry<WorkExperience>({
-          position: e['position'] || 'Sin cargo',
-          institution: e['institution'] || 'Sin institución',
-          startDate: e['startDate'] || '2020',
-          endDate: e['endDate'] || undefined,
-          description: e['description'] || undefined,
-          achievements: [],
-          location: e['location'] || undefined,
-        }),
-      ),
-    education: (raw['education'] ?? [])
-      .filter((e) => e['title'] || e['institution'])
-      .map((e) =>
-        createEntry<Education>({
-          title: e['title'] || 'Sin título',
-          institution: e['institution'] || 'Sin institución',
-          startDate: e['startDate'] || undefined,
-          endDate: e['endDate'] || undefined,
-          description: e['description'] || undefined,
-          field: e['field'] || undefined,
-        }),
-      ),
-    certifications: (raw['certifications'] ?? [])
-      .filter((e) => e['name'])
-      .map((e) =>
-        createEntry<Certification>({
-          name: e['name'] || '',
-          issuer: e['issuer'] || 'Sin emisor',
-          issueDate: e['issueDate'] || undefined,
-          expirationDate: e['expirationDate'] || undefined,
-          verificationCode: undefined,
-          verificationUrl: undefined,
-        }),
-      ),
-    courses: (raw['courses'] ?? [])
-      .filter((e) => e['name'])
-      .map((e) =>
-        createEntry<Course>({
-          name: e['name'] || '',
-          institution: e['institution'] || undefined,
-          completionDate: e['completionDate'] || undefined,
-          duration: e['duration'] || undefined,
-          description: e['description'] || undefined,
-        }),
-      ),
-    skills: (raw['skills'] ?? [])
-      .filter((e) => e['name'])
-      .map((e) =>
-        createEntry<Skill>({
-          name: e['name'] || '',
-          category: e['category'] || undefined,
-          level: (e['level'] as Skill['level']) || undefined,
-        }),
-      ),
-    languages: (raw['languages'] ?? [])
-      .filter((e) => e['name'])
-      .map((e) =>
-        createEntry<Language>({
-          name: e['name'] || '',
-          level: (e['level'] as Language['level']) || 'intermediate',
-          certification: e['certification'] || undefined,
-        }),
-      ),
-  };
-}
-
 /**
- * Build one evidence target per entry created by this import, carrying the real
- * entry id and the section the entry actually belongs to.
+ * Build all 16 sections from raw AI output, assigning ids and verified status.
+ * Returns the built sections AND the list of all entry ids for evidence linking.
  */
-function buildEvidenceTargets(sections: ImportedSections): EvidenceTarget[] {
-  return IMPORTABLE_SECTIONS.flatMap((sectionType) =>
-    sections[sectionType].map((entry) => ({ sectionType, entryId: entry.id })),
-  );
+function buildSections(
+  raw: Record<string, Array<Record<string, unknown>>>,
+  verified: boolean,
+): { sections: ProfileSections; evidenceTargets: EvidenceTarget[] } {
+  const sections = createEmptySections();
+  const evidenceTargets: EvidenceTarget[] = [];
+
+  for (const key of PROFILE_SECTION_KEYS) {
+    const entries = raw[key];
+    if (!Array.isArray(entries) || entries.length === 0) continue;
+
+    const built: any[] = [];
+    for (const entry of entries) {
+      const created = createEntry<BaseEntity>({
+        ...entry,
+        verified,
+      } as any);
+      built.push(created);
+      evidenceTargets.push({ sectionType: key as SectionType, entryId: created.id });
+    }
+    (sections as any)[key] = built;
+  }
+
+  return { sections, evidenceTargets };
 }
 
 export function createProfileImportRoutes(
@@ -158,36 +99,55 @@ export function createProfileImportRoutes(
       }
 
       const personalInfo = buildPersonalInfo(body.personalInfo);
-      const newSections = buildSections(body.sections ?? {});
-      const evidenceTargets = buildEvidenceTargets(newSections);
+      const isVerified = body.verified === true && !!body.documentId;
+      const { sections: newSections, evidenceTargets } = buildSections(
+        body.sections ?? {},
+        isVerified,
+      );
 
       let profileId: string;
       let result;
 
       if (body.profileId) {
+        // --- Extend existing profile ---
         const existing = await service.findById(body.profileId);
         if (!existing) {
           res.status(404).json(failure('NOT_FOUND', 'Perfil no encontrado'));
           return;
         }
 
+        // Merge personal info: only overwrite non-empty fields
         existing.personalInfo = {
           ...existing.personalInfo,
           ...Object.fromEntries(
-            Object.entries(personalInfo).filter(([, v]) => v !== undefined && v !== ''),
+            Object.entries(personalInfo).filter(
+              ([key, v]) => v !== undefined && v !== '' && key !== 'links' && key !== 'profesiones',
+            ),
           ),
         };
+        // Merge profesiones (add new, keep existing)
+        if (personalInfo.profesiones.length > 0) {
+          const existingSet = new Set(existing.personalInfo.profesiones);
+          for (const p of personalInfo.profesiones) {
+            existingSet.add(p);
+          }
+          existing.personalInfo.profesiones = [...existingSet];
+        }
 
-        for (const sectionType of IMPORTABLE_SECTIONS) {
-          // Cast is safe: each section array holds entries of its own type.
-          (existing.sections[sectionType] as unknown[]).push(...newSections[sectionType]);
+        // Append new entries to each section
+        for (const key of PROFILE_SECTION_KEYS) {
+          const newEntries = (newSections as any)[key] as unknown[];
+          if (newEntries && newEntries.length > 0) {
+            ((existing.sections as any)[key] as unknown[]).push(...newEntries);
+          }
         }
 
         result = await service.updateDirect(existing);
         profileId = existing.id;
       } else {
+        // --- Create new profile ---
         const profile = createProfile(personalInfo);
-        profile.sections = { ...profile.sections, ...newSections };
+        profile.sections = newSections;
         result = await service.createDirect(profile);
         profileId = result.id;
       }

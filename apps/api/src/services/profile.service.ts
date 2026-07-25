@@ -1,22 +1,20 @@
 import {
   type ProfileRepository,
   type ProfessionalProfile,
-  type CreateProfileInput,
+  type PersonalInfo,
+  type ProfileSections,
   createProfile,
   createEntry,
-  type WorkExperience,
-  type Education,
-  type Certification,
-  type Course,
-  type Language,
-  type Skill,
-  type Project,
-  type Publication,
-  type Award,
-  type Affiliation,
-  type Volunteering,
-  type Reference,
+  createEmptySections,
+  PROFILE_SECTION_KEYS,
+  type BaseEntity,
 } from '@ocp/core';
+
+/** Input for creating a profile via the REST API. */
+export interface CreateProfileInput {
+  personalInfo: PersonalInfo;
+  sections?: Partial<Record<keyof ProfileSections, Array<Record<string, unknown>>>>;
+}
 
 export class ProfileService {
   constructor(private readonly repository: ProfileRepository) {}
@@ -25,20 +23,7 @@ export class ProfileService {
     const profile = createProfile(input.personalInfo);
 
     if (input.sections) {
-      profile.sections = {
-        workExperience: (input.sections.workExperience || []).map((e) => createEntry<WorkExperience>(e)),
-        education: (input.sections.education || []).map((e) => createEntry<Education>(e)),
-        certifications: (input.sections.certifications || []).map((e) => createEntry<Certification>(e)),
-        courses: (input.sections.courses || []).map((e) => createEntry<Course>(e)),
-        languages: (input.sections.languages || []).map((e) => createEntry<Language>(e)),
-        skills: (input.sections.skills || []).map((e) => createEntry<Skill>(e)),
-        projects: (input.sections.projects || []).map((e) => createEntry<Project>(e)),
-        publications: (input.sections.publications || []).map((e) => createEntry<Publication>(e)),
-        awards: (input.sections.awards || []).map((e) => createEntry<Award>(e)),
-        affiliations: (input.sections.affiliations || []).map((e) => createEntry<Affiliation>(e)),
-        volunteering: (input.sections.volunteering || []).map((e) => createEntry<Volunteering>(e)),
-        references: (input.sections.references || []).map((e) => createEntry<Reference>(e)),
-      };
+      profile.sections = this.buildSections(input.sections);
     }
 
     return this.repository.create(profile);
@@ -56,20 +41,7 @@ export class ProfileService {
       ...existing,
       personalInfo: input.personalInfo,
       sections: input.sections
-        ? {
-            workExperience: (input.sections.workExperience || []).map((e) => createEntry<WorkExperience>(e)),
-            education: (input.sections.education || []).map((e) => createEntry<Education>(e)),
-            certifications: (input.sections.certifications || []).map((e) => createEntry<Certification>(e)),
-            courses: (input.sections.courses || []).map((e) => createEntry<Course>(e)),
-            languages: (input.sections.languages || []).map((e) => createEntry<Language>(e)),
-            skills: (input.sections.skills || []).map((e) => createEntry<Skill>(e)),
-            projects: (input.sections.projects || []).map((e) => createEntry<Project>(e)),
-            publications: (input.sections.publications || []).map((e) => createEntry<Publication>(e)),
-            awards: (input.sections.awards || []).map((e) => createEntry<Award>(e)),
-            affiliations: (input.sections.affiliations || []).map((e) => createEntry<Affiliation>(e)),
-            volunteering: (input.sections.volunteering || []).map((e) => createEntry<Volunteering>(e)),
-            references: (input.sections.references || []).map((e) => createEntry<Reference>(e)),
-          }
+        ? this.buildSections(input.sections)
         : existing.sections,
       updatedAt: new Date(),
     };
@@ -85,11 +57,34 @@ export class ProfileService {
     return true;
   }
 
+  /** Save a profile as-is (used by the import endpoint). */
   async updateDirect(profile: ProfessionalProfile): Promise<ProfessionalProfile> {
     return this.repository.update({ ...profile, updatedAt: new Date() });
   }
 
+  /** Persist a fully constructed profile (used by the import endpoint). */
   async createDirect(profile: ProfessionalProfile): Promise<ProfessionalProfile> {
     return this.repository.create(profile);
+  }
+
+  /**
+   * Build a ProfileSections from raw input, assigning ids and timestamps.
+   * Unknown section keys are ignored; missing sections default to empty arrays.
+   */
+  private buildSections(
+    raw: Partial<Record<keyof ProfileSections, Array<Record<string, unknown>>>>,
+  ): ProfileSections {
+    const sections = createEmptySections();
+
+    for (const key of PROFILE_SECTION_KEYS) {
+      const entries = raw[key];
+      if (!Array.isArray(entries) || entries.length === 0) continue;
+
+      (sections as any)[key] = entries.map((entry) =>
+        createEntry<BaseEntity>({ ...entry, verified: entry['verified'] ?? false } as any),
+      );
+    }
+
+    return sections;
   }
 }

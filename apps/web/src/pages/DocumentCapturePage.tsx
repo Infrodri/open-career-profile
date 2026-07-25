@@ -60,7 +60,7 @@ export function DocumentCapturePage() {
       personalInfo,
       sections,
     }: {
-      personalInfo: Record<string, string>;
+      personalInfo: Record<string, unknown>;
       sections: ProfileAnalysis['sections'];
     }) =>
       importProfile(personalInfo, sections, {

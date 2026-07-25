@@ -17,51 +17,43 @@ export function EditProfilePage() {
 
   const mutation = useMutation({
     mutationFn: (data: CreateProfilePayload) => updateProfile(id!, data),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(['profile', id], updated);
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profile', id] });
       navigate(`/profile/${id}`);
     },
   });
 
   if (isLoading) {
-    return <p className="text-gray-500">Loading profile...</p>;
+    return <p className="max-w-4xl mx-auto px-6 py-12 text-slate-500">Cargando perfil...</p>;
   }
 
   if (isError || !profile) {
-    return <p className="text-red-600">Failed to load profile.</p>;
+    return <p className="max-w-4xl mx-auto px-6 py-12 text-red-600">No se pudo cargar el perfil.</p>;
   }
 
-  const initialData: CreateProfilePayload = {
-    personalInfo: profile.personalInfo,
-    sections: {
-      workExperience: profile.sections.workExperience.map(({ id: _id, createdAt: _c, updatedAt: _u, ...rest }) => rest),
-      education: profile.sections.education.map(({ id: _id, createdAt: _c, updatedAt: _u, ...rest }) => rest),
-      skills: profile.sections.skills.map(({ id: _id, createdAt: _c, updatedAt: _u, ...rest }) => rest),
-      certifications: profile.sections.certifications.map(({ id: _id, createdAt: _c, updatedAt: _u, ...rest }) => rest),
-      languages: profile.sections.languages.map(({ id: _id, createdAt: _c, updatedAt: _u, ...rest }) => rest),
-      courses: profile.sections.courses,
-      projects: profile.sections.projects,
-      publications: profile.sections.publications,
-      awards: profile.sections.awards,
-      affiliations: profile.sections.affiliations,
-      volunteering: profile.sections.volunteering,
-      references: profile.sections.references,
-    },
-  };
-
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Edit Profile</h1>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      <header className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
+          Editar Perfil
+        </h1>
+        <p className="mt-2 text-slate-500 dark:text-slate-400">
+          Aquí puedes editar tu información personal. Las secciones del CV se gestionan
+          subiendo documentos desde "Agregar Documento".
+        </p>
+      </header>
+
       {mutation.isError && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-700 dark:text-red-300">
           {mutation.error.message}
         </div>
       )}
+
       <ProfileForm
-        initialData={initialData}
         onSubmit={(data) => mutation.mutate(data)}
         isLoading={mutation.isPending}
-        submitLabel="Save Changes"
+        submitLabel="Guardar cambios"
+        initialData={profile.personalInfo}
       />
     </div>
   );

@@ -7,212 +7,370 @@ datasource db {
   url      = env("OCP_DATABASE_URL")
 }
 
+// =============================================================================
+// PROFILE — The root entity. One person = one profile.
+// =============================================================================
+
 model Profile {
   id               String   @id @default(uuid())
   fullName         String
+  profesiones      String[] // ["Ing. Sistemas Informático", "T.S. Contador General"]
   email            String?
   phone            String?
   city             String?
   country          String?
-  summary          String?
+  nacionalidad     String?
+  sexo             String?
+  estadoCivil      String?
+  summary          String?  @db.Text
   photo            String?
   birthDate        String?
-  identityDocument String?
+  identityDocument String?  // CI con extensión: "5669226 Ch."
+  libretaMilitar   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  links          ProfileLink[]
-  workExperience WorkExperience[]
-  education      Education[]
-  certifications Certification[]
-  courses        Course[]
-  languages      Language[]
-  skills         Skill[]
-  projects       Project[]
-  publications   Publication[]
-  awards         Award[]
-  affiliations   Affiliation[]
-  volunteering   Volunteering[]
-  references     Reference[]
-  documents      Document[]
+  // Social / professional links
+  links                              ProfileLink[]
+
+  // Academic formation
+  formacionAcademica                 FormacionAcademica[]
+  postgrado                          Postgrado[]
+  cursosEspecialidad                 CursoEspecialidad[]
+
+  // Certifications by domain
+  certificacionesCiberseguridad      CertificacionCiberseguridad[]
+  certificacionesSistemasInstitucionales CertificacionSistemasInstitucionales[]
+
+  // Courses/workshops by domain
+  cursosAdministrativos              CursoAdministrativo[]
+  cursosProgramacion                 CursoProgramacion[]
+  cursosGenerales                    CursoGeneral[]
+
+  // Work experience by type
+  experienciaAdministrativa          ExperienciaAdministrativa[]
+  experienciaDocente                 ExperienciaDocente[]
+  experienciaDesarrollo              ExperienciaDesarrollo[]
+
+  // Awards and recognitions
+  reconocimientosExpositor           ReconocimientoExpositor[]
+  reconocimientosRepresentacion      ReconocimientoRepresentacion[]
+  reconocimientosLaborales           ReconocimientoLaboral[]
+
+  // Other
+  idiomas                            Idioma[]
+  habilidades                        Habilidad[]
+
+  // Documents uploaded as evidence
+  documents                          Document[]
 }
 
 model ProfileLink {
   id        String  @id @default(uuid())
   profileId String
-  label     String
+  label     String  // "LinkedIn", "GitHub", "Portfolio"
   url       String
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
-model WorkExperience {
-  id           String   @id @default(uuid())
-  profileId    String
-  position     String
-  institution  String
-  startDate    String
-  endDate      String?
-  description  String?
-  achievements String[]
-  location     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
+// =============================================================================
+// FORMACIÓN ACADÉMICA
+// Títulos: bachiller, técnico superior, licenciatura, provisión nacional, ingeniería
+// =============================================================================
 
-model Education {
+model FormacionAcademica {
   id          String   @id @default(uuid())
   profileId   String
-  title       String
-  institution String
-  startDate   String?
-  endDate     String?
-  description String?
-  field       String?
+  title       String   // "Título en Ingeniería de Sistemas"
+  institution String   // "Universidad Adventista de Bolivia"
+  startDate   String?  // "2025"
+  endDate     String?  // "2025"
+  field       String?  // "Sistemas Informáticos"
+  tipo        String?  // bachiller | tecnico_superior | licenciatura | provision_nacional | ingenieria
+  detalle     String?  // "Culminación de Estudios"
+  verified    Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
-model Certification {
-  id               String   @id @default(uuid())
-  profileId        String
-  name             String
-  issuer           String
-  issueDate        String?
-  expirationDate   String?
-  verificationCode String?
-  verificationUrl  String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+// =============================================================================
+// POSTGRADO — Diplomados, maestrías, doctorados
+// =============================================================================
+
+model Postgrado {
+  id          String   @id @default(uuid())
+  profileId   String
+  title       String   // "Diplomado en Docencia para Educación Superior"
+  institution String   // "CEPI"
+  startDate   String?
+  endDate     String?
+  detalle     String?  // "Modalidad virtual"
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
-model Course {
-  id             String   @id @default(uuid())
-  profileId      String
-  name           String
-  institution    String?
-  completionDate String?
-  duration       String?
-  description    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  profile        Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+// =============================================================================
+// CURSOS DE ESPECIALIDAD — Certificaciones largas con módulos (Cisco, etc.)
+// =============================================================================
+
+model CursoEspecialidad {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Certificación en curso complementario Cisco"
+  issuer      String   // "Cisco Networking Academy"
+  issueDate   String?  // "2015"
+  contenido   String[] // ["CCNA Exploration: Fundamentals", ...]
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
-model Language {
+// =============================================================================
+// CERTIFICACIONES DE CIBERSEGURIDAD
+// =============================================================================
+
+model CertificacionCiberseguridad {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Especialización de Ciberseguridad"
+  issuer      String   // "Netzun Plataforma Virtual de Educación"
+  issueDate   String?  // "2023"
+  contenido   String[] // ["Cybersecurity Fundamentals", "Zero Trust", ...]
+  detalle     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// CERTIFICACIONES DE SISTEMAS INSTITUCIONALES (SIREJ, REJAP, Derechos Reales)
+// =============================================================================
+
+model CertificacionSistemasInstitucionales {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Seminario Taller - Sistema SIREJ WEB"
+  issuer      String   // "Consejo de la Magistratura"
+  issueDate   String?
+  contenido   String[] // ["REJAP", "Trámites ágiles de Derechos Reales", ...]
+  detalle     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// CURSOS/TALLERES ADMINISTRATIVOS (leyes, ética, archivística, etc.)
+// =============================================================================
+
+model CursoAdministrativo {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Ley N° 1178"
+  issuer      String   // "Contraloría General del Estado (CENCAP)"
+  issueDate   String?
+  detalle     String?  // Descripción adicional
+  contenido   String[] // Temas si aplica
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// CURSOS/TALLERES DE PROGRAMACIÓN (VS Code, Power BI, SIGEP, etc.)
+// =============================================================================
+
+model CursoProgramacion {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Visual Studio CODE"
+  issuer      String   // "UDEMY"
+  issueDate   String?
+  contenido   String[] // ["Mejora tu velocidad para codificar"]
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// CURSOS GENERALES — Congresos, conferencias, foros, talleres educativos
+// =============================================================================
+
+model CursoGeneral {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Certificado de Asistencia a Conferencias"
+  issuer      String   // "Universidad Mayor de San Andrés"
+  issueDate   String?  // "2007"
+  detalle     String?  // "XIV Congreso Nacional de Ciencias de la Computación"
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// EXPERIENCIA ADMINISTRATIVA (técnico, consultor, soporte, etc.)
+// =============================================================================
+
+model ExperienciaAdministrativa {
+  id          String   @id @default(uuid())
+  profileId   String
+  position    String   // "Técnico Informático"
+  institution String   // "Órgano Judicial Potosí"
+  startDate   String   // "2019"
+  endDate     String?  // "2021" o null para "presente"
+  description String?  @db.Text // Funciones
+  location    String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// EXPERIENCIA DOCENTE
+// =============================================================================
+
+model ExperienciaDocente {
+  id          String   @id @default(uuid())
+  profileId   String
+  position    String   // "Profesor de Computación"
+  institution String   // "Centro de Educación Angel Baspineiro"
+  startDate   String
+  endDate     String?
+  description String?  @db.Text
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// EXPERIENCIA EN DESARROLLO/PROGRAMACIÓN
+// =============================================================================
+
+model ExperienciaDesarrollo {
+  id          String   @id @default(uuid())
+  profileId   String
+  position    String   // "Técnico Desarrollador" / "Consultor en línea"
+  institution String   // Empresa o institución
+  startDate   String
+  endDate     String?
+  description String?  @db.Text // Funciones generales
+  proyectos   String[] // ["Sistema de control de Asistencia", "Sistema de Ventas"]
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// RECONOCIMIENTOS COMO EXPOSITOR / PONENTE / EXPERTO
+// =============================================================================
+
+model ReconocimientoExpositor {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Certificado de Expositor" / "Certificado de Ponente" / "Certificado de Experto"
+  issuer      String   // Institución que otorga
+  issueDate   String?  // "2017"
+  detalle     String?  // Evento o razón
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// RECONOCIMIENTOS POR REPRESENTACIÓN (organizador, delegado, apoyo)
+// =============================================================================
+
+model ReconocimientoRepresentacion {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "Certificado de Organizador"
+  issuer      String
+  issueDate   String?
+  detalle     String?
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// RECONOCIMIENTOS LABORALES (memorandos, felicitaciones internas)
+// =============================================================================
+
+model ReconocimientoLaboral {
+  id          String   @id @default(uuid())
+  profileId   String
+  name        String   // "MEMORANDO RD-CM-PT-014/2021"
+  issuer      String?  // Puede ser interno
+  issueDate   String?  // "2021-04-27"
+  detalle     String?  // "Se reconoce por la labor desempeñada"
+  motivo      String?  // "Reconocimiento y Felicitación"
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+// =============================================================================
+// IDIOMAS
+// =============================================================================
+
+model Idioma {
   id            String   @id @default(uuid())
   profileId     String
-  name          String
-  level         String
-  certification String?
+  name          String   // "Inglés"
+  level         String   // "basic" | "intermediate" | "advanced" | "native"
+  detalle       String?  // "Nivel Medio (Lenguajes de Programación)"
+  certificado   Boolean  @default(false) // Tiene certificación?
+  verified      Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
-model Skill {
+// =============================================================================
+// HABILIDADES
+// =============================================================================
+
+model Habilidad {
   id        String   @id @default(uuid())
   profileId String
-  name      String
-  category  String?
-  level     String?
+  name      String   // "Programación"
+  category  String?  // "técnica" | "herramienta" | "blanda"
+  level     String?  // "basic" | "intermediate" | "advanced" | "expert"
+  verified  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 }
 
-model Project {
-  id           String   @id @default(uuid())
-  profileId    String
-  name         String
-  description  String?
-  role         String?
-  startDate    String?
-  endDate      String?
-  url          String?
-  technologies String[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
-
-model Publication {
-  id          String   @id @default(uuid())
-  profileId   String
-  title       String
-  type        String?
-  date        String?
-  publisher   String?
-  url         String?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
-
-model Award {
-  id          String   @id @default(uuid())
-  profileId   String
-  name        String
-  issuer      String?
-  date        String?
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
-
-model Affiliation {
-  id        String   @id @default(uuid())
-  profileId String
-  organization String
-  role      String?
-  startDate String?
-  endDate   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
-
-model Volunteering {
-  id          String   @id @default(uuid())
-  profileId   String
-  organization String
-  role        String?
-  description String?
-  startDate   String?
-  endDate     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
-
-model Reference {
-  id           String   @id @default(uuid())
-  profileId    String
-  fullName     String
-  relationship String?
-  institution  String?
-  phone        String?
-  email        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-}
+// =============================================================================
+// DOCUMENTOS Y EVIDENCIAS (sin cambios respecto a SPEC-006)
+// =============================================================================
 
 model Document {
   id            String   @id @default(uuid())
-  // Optional: a document can be uploaded before any profile exists.
-  // It gets linked to a profile when the extracted data is imported.
   profileId     String?
   fileName      String
   mimeType      String
   sizeBytes     Int
   storagePath   String
   documentType  String?
-  extractedText String? @db.Text
+  extractedText String?  @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   profile       Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -224,8 +382,8 @@ model Document {
 model Evidence {
   id          String   @id @default(uuid())
   documentId  String
-  sectionType String
-  entryId     String
+  sectionType String   // "formacionAcademica", "experienciaAdministrativa", etc.
+  entryId     String   // UUID of the entry in the corresponding section table
   note        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

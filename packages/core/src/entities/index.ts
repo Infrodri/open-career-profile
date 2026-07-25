@@ -1,17 +1,37 @@
+// Personal info
 export { type PersonalInfo } from './personal-info.js';
-export { type WorkExperience } from './work-experience.js';
-export { type Education } from './education.js';
-export { type Certification } from './certification.js';
-export { type Course } from './course.js';
-export { type Language } from './language.js';
-export { type Skill } from './skill.js';
-export { type Project } from './project.js';
-export { type Publication } from './publication.js';
-export { type Award } from './award.js';
-export { type Affiliation } from './affiliation.js';
-export { type Volunteering } from './volunteering.js';
-export { type Reference } from './reference.js';
-export { type ProfessionalProfile, type ProfileSections } from './professional-profile.js';
+
+// Section entities (the 16 sections)
+export {
+  type Verifiable,
+  type FormacionAcademica,
+  type Postgrado,
+  type CursoEspecialidad,
+  type CertificacionCiberseguridad,
+  type CertificacionSistemasInstitucionales,
+  type CursoAdministrativo,
+  type CursoProgramacion,
+  type CursoGeneral,
+  type ExperienciaAdministrativa,
+  type ExperienciaDocente,
+  type ExperienciaDesarrollo,
+  type ReconocimientoExpositor,
+  type ReconocimientoRepresentacion,
+  type ReconocimientoLaboral,
+  type Idioma,
+  type Habilidad,
+  type TituloTipo,
+  TITULO_TIPOS,
+} from './sections.js';
+
+// Profile aggregate
+export {
+  type ProfessionalProfile,
+  type ProfileSections,
+  PROFILE_SECTION_KEYS,
+} from './professional-profile.js';
+
+// Documents & evidence
 export {
   type Document,
   type Evidence,
@@ -22,4 +42,6 @@ export {
   isSectionType,
   isDocumentType,
 } from './document.js';
-export { createProfile, createEntry } from './factories.js';
+
+// Factories
+export { createProfile, createEntry, createEmptySections } from './factories.js';

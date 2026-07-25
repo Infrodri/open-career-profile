@@ -17,9 +17,10 @@ import type {
   DocumentType,
   Evidence,
   ProfessionalProfile,
-  SectionType,
+  SectionKey,
   StoredDocument,
 } from '../types/profile';
+import { SECTION_LABELS } from '../types/profile';
 
 const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   certificado: 'Certificado',
@@ -29,20 +30,7 @@ const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   otro: 'Otro',
 };
 
-const SECTION_LABELS: Record<SectionType, string> = {
-  workExperience: 'Experiencia',
-  education: 'Educación',
-  certifications: 'Certificación',
-  courses: 'Curso',
-  skills: 'Habilidad',
-  languages: 'Idioma',
-  projects: 'Proyecto',
-  publications: 'Publicación',
-  awards: 'Reconocimiento',
-  affiliations: 'Afiliación',
-  volunteering: 'Voluntariado',
-  references: 'Referencia',
-};
+const SECTION_LABEL_MAP = SECTION_LABELS;
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -246,7 +234,7 @@ export function DocumentsPage() {
                       }`}
                       title={label ? undefined : 'La entrada vinculada ya no existe en el perfil'}
                     >
-                      <span className="font-medium">{SECTION_LABELS[evidence.sectionType]}</span>
+                      <span className="font-medium">{SECTION_LABEL_MAP[evidence.sectionType as SectionKey] ?? evidence.sectionType}</span>
                       {': '}
                       {label ?? 'entrada eliminada'}
                     </li>

@@ -25,6 +25,39 @@ export class OpenAiCompatibleAdapter implements AiProvider {
     return this.config.baseUrl !== '' && this.config.model !== '';
   }
 
+  /**
+   * Quick connectivity check: calls the provider with a trivial prompt.
+   * Returns true if the provider answers (even if the answer is garbage).
+   */
+  async checkConnection(): Promise<{ ok: boolean; model: string; error?: string }> {
+    if (!this.isAvailable()) {
+      return { ok: false, model: this.config.model, error: 'Provider not configured' };
+    }
+
+    try {
+      const url = `${this.config.baseUrl}/chat/completions`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: this.buildHeaders(),
+        body: JSON.stringify({
+          model: this.config.model,
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+        }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        return { ok: false, model: this.config.model, error: `HTTP ${response.status}: ${text.slice(0, 200)}` };
+      }
+
+      return { ok: true, model: this.config.model };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      return { ok: false, model: this.config.model, error: message };
+    }
+  }
+
   async complete(prompt: string): Promise<string> {
     if (!this.isAvailable()) {
       return '[AI unavailable] Provider is not configured.';
@@ -33,14 +66,6 @@ export class OpenAiCompatibleAdapter implements AiProvider {
     try {
       const url = `${this.config.baseUrl}/chat/completions`;
 
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (this.config.apiKey !== '') {
-        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
-      }
-
       const body = JSON.stringify({
         model: this.config.model,
         messages: [{ role: 'user', content: prompt }],
@@ -48,11 +73,17 @@ export class OpenAiCompatibleAdapter implements AiProvider {
         temperature: this.config.temperature,
       });
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60_000); // 60s timeout
+
       const response = await fetch(url, {
         method: 'POST',
-        headers,
+        headers: this.buildHeaders(),
         body,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
@@ -68,8 +99,29 @@ export class OpenAiCompatibleAdapter implements AiProvider {
 
       return content;
     } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return '[AI error] La IA tardó demasiado en responder (timeout 60s).';
+      }
       const message = error instanceof Error ? error.message : 'Unknown error';
       return `[AI error] ${message}`;
     }
+  }
+
+  private buildHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (this.config.apiKey !== '') {
+      headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+    }
+
+    // OpenRouter requires these headers for attribution.
+    if (this.config.baseUrl.includes('openrouter.ai')) {
+      headers['HTTP-Referer'] = 'http://localhost:3000';
+      headers['X-Title'] = 'Open Career Profile';
+    }
+
+    return headers;
   }
 }
