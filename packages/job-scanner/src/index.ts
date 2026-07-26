@@ -8,6 +8,7 @@ export {
   LinkedInPublicProvider,
   TrabajopolisBoProvider,
   RemoteOkProvider,
+  GoogleJobsProvider,
 } from './providers/index.js';
 export {
   type SearchConfig,

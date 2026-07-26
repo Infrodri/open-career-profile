@@ -17,6 +17,7 @@ import { EmptyProfileState } from '../components/EmptyProfileState';
 
 const PORTALS = [
   { id: 'computrabajo_bo', label: 'CompuTrabajo Bolivia' },
+  { id: 'google_jobs', label: 'Google Empleos' },
   { id: 'linkedin_public', label: 'LinkedIn (Público)' },
   { id: 'trabajopolis_bo', label: 'Trabajopolis Bolivia' },
   { id: 'remoteok', label: 'RemoteOK (Internacional)' },
@@ -442,6 +443,10 @@ function ListingCard({ listing, configId }: { listing: JobListing; configId: str
             {listing.location && ` · ${listing.location}`}
             {listing.postedDate && ` · ${listing.postedDate}`}
           </p>
+
+          {listing.description && !listing.matchSummary && (
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5 line-clamp-2">{listing.description}</p>
+          )}
 
           {listing.matchSummary && (
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-1.5">{listing.matchSummary}</p>

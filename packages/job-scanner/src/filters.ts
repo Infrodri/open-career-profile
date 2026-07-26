@@ -3,25 +3,38 @@ import { type RawJob, type ScannedJob, type SearchConfig } from './types.js';
 /**
  * Apply search filters to raw job listings.
  * Returns only jobs that match the user's criteria.
+ *
+ * Filter logic:
+ * - excludeKeywords: hard filter (always excludes)
+ * - locations + modality: soft filter combined (OR logic)
+ *   - A job passes if it matches ANY location OR the modality
+ *   - If no locations and no modality: include everything
  */
 export function applyFilters(jobs: ScannedJob[], config: SearchConfig): ScannedJob[] {
   return jobs.filter((job) => {
-    // Exclude by keywords in title or description
+    // Hard filter: exclude by keywords in title or description
     if (matchesExcludeKeywords(job, config.excludeKeywords)) {
       return false;
     }
 
-    // Filter by location if locations are specified
-    if (config.locations.length > 0 && !matchesLocation(job, config.locations)) {
-      return false;
+    // Soft filter: location OR modality (at least one must match, if specified)
+    const hasLocationFilter = config.locations.length > 0;
+    const hasModalityFilter = !!config.modality;
+
+    if (!hasLocationFilter && !hasModalityFilter) {
+      return true; // No location/modality restrictions
     }
 
-    // Filter by modality if specified
-    if (config.modality && !matchesModality(job, config.modality)) {
-      return false;
-    }
+    const locationMatch = hasLocationFilter ? matchesLocation(job, config.locations) : false;
+    const modalityMatch = hasModalityFilter ? matchesModality(job, config.modality!) : false;
 
-    return true;
+    // If both filters are set, job passes if it matches EITHER
+    // If only one is set, it must match that one
+    if (hasLocationFilter && hasModalityFilter) {
+      return locationMatch || modalityMatch;
+    }
+    if (hasLocationFilter) return locationMatch;
+    return modalityMatch;
   });
 }
 
