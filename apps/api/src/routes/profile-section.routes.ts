@@ -141,5 +141,78 @@ export function createProfileSectionRoutes(service: ProfileService): Router {
     }
   });
 
+  // PATCH /api/profiles/:id/sections/:sectionKey/:entryId — update entry fields
+  router.patch('/:id/sections/:sectionKey/:entryId', async (req: Request, res: Response) => {
+    try {
+      const { id, sectionKey, entryId } = req.params as {
+        id: string;
+        sectionKey: string;
+        entryId: string;
+      };
+
+      if (!isSectionType(sectionKey)) {
+        res.status(400).json(failure('INVALID_SECTION', `Sección inválida: ${sectionKey}`));
+        return;
+      }
+
+      const profile = await service.findById(id);
+      if (!profile) {
+        res.status(404).json(failure('NOT_FOUND', 'Perfil no encontrado'));
+        return;
+      }
+
+      const section = (profile.sections as any)[sectionKey] as Array<Record<string, unknown>>;
+      const entry = section.find((e) => e['id'] === entryId);
+      if (!entry) {
+        res.status(404).json(failure('ENTRY_NOT_FOUND', 'Entrada no encontrada'));
+        return;
+      }
+
+      // Merge the patch data into the entry (exclude immutable fields)
+      const { id: _id, createdAt: _ca, updatedAt: _ua, profileId: _pid, ...patchData } = req.body;
+      for (const [key, value] of Object.entries(patchData)) {
+        entry[key] = value;
+      }
+      entry['updatedAt'] = new Date().toISOString();
+
+      await service.updateDirect(profile);
+      res.json(success(entry));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al actualizar la entrada';
+      res.status(500).json(failure('UPDATE_ERROR', message));
+    }
+  });
+
+  // POST /api/profiles/:id/verify-all — mark ALL entries in ALL sections as verified
+  router.post('/:id/verify-all', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params as { id: string };
+
+      const profile = await service.findById(id);
+      if (!profile) {
+        res.status(404).json(failure('NOT_FOUND', 'Perfil no encontrado'));
+        return;
+      }
+
+      let count = 0;
+      for (const sectionKey of Object.keys(profile.sections)) {
+        const section = (profile.sections as any)[sectionKey] as Array<{ verified?: boolean }>;
+        if (!Array.isArray(section)) continue;
+        for (const entry of section) {
+          if (!entry.verified) {
+            entry.verified = true;
+            count++;
+          }
+        }
+      }
+
+      await service.updateDirect(profile);
+      res.json(success({ verifiedCount: count, message: `${count} entradas marcadas como verificadas` }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al verificar masivamente';
+      res.status(500).json(failure('VERIFY_ALL_ERROR', message));
+    }
+  });
+
   return router;
 }
