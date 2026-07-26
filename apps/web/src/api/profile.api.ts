@@ -40,11 +40,17 @@ export async function generateOutput(
   id: string,
   templateId: string,
   format: OutputRequest['format'],
+  ruleSetId?: string,
 ): Promise<Blob> {
+  const body: Record<string, string> = { templateId, format };
+  if (ruleSetId) {
+    body['ruleSetId'] = ruleSetId;
+  }
+
   const response = await fetch(`/api/profiles/${id}/output`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ templateId, format }),
+    body: JSON.stringify(body),
   });
 
   // This endpoint streams a file, so it does not use the JSON envelope on success.
@@ -60,4 +66,28 @@ export async function generateOutput(
   }
 
   return response.blob();
+}
+
+export interface ValidationIssue {
+  severity: 'error' | 'warning' | 'info';
+  code: string;
+  message: string;
+  field?: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  issues: ValidationIssue[];
+}
+
+export async function validateProfile(
+  id: string,
+  ruleSetId: string,
+): Promise<ValidationResult> {
+  const response = await fetch(`/api/profiles/${id}/validate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ruleSetId }),
+  });
+  return unwrap<ValidationResult>(response);
 }
