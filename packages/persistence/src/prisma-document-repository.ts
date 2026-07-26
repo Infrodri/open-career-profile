@@ -11,6 +11,7 @@ import {
   toDomainDocument,
   toDomainEvidence,
   documentIncludeWithEvidences,
+  type PrismaDocumentRow,
 } from './mappers/document.mapper.js';
 
 export class PrismaDocumentRepository implements DocumentRepository {
@@ -20,7 +21,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
   ) {}
 
   async create(document: Document): Promise<Document> {
-    const result = await this.prisma.document.create({
+    const result = await (this.prisma.document.create as Function)({
       data: {
         id: document.id,
         profileId: document.profileId ?? null,
@@ -28,11 +29,12 @@ export class PrismaDocumentRepository implements DocumentRepository {
         mimeType: document.mimeType,
         sizeBytes: document.sizeBytes,
         storagePath: document.storagePath,
+        contentHash: document.contentHash ?? null,
         documentType: document.documentType ?? null,
         extractedText: document.extractedText ?? null,
       },
       include: documentIncludeWithEvidences,
-    });
+    }) as PrismaDocumentRow;
 
     return toDomainDocument(result);
   }
@@ -42,6 +44,18 @@ export class PrismaDocumentRepository implements DocumentRepository {
       where: { id },
       include: documentIncludeWithEvidences,
     });
+
+    return result ? toDomainDocument(result as unknown as PrismaDocumentRow) : null;
+  }
+
+  async findByContentHash(contentHash: string, profileId?: string): Promise<Document | null> {
+    const result = await (this.prisma.document.findFirst as Function)({
+      where: {
+        contentHash,
+        ...(profileId ? { profileId } : {}),
+      },
+      include: documentIncludeWithEvidences,
+    }) as PrismaDocumentRow | null;
 
     return result ? toDomainDocument(result) : null;
   }
@@ -53,7 +67,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return results.map(toDomainDocument);
+    return results.map((r) => toDomainDocument(r as unknown as PrismaDocumentRow));
   }
 
   async findUnassigned(): Promise<Document[]> {
@@ -63,7 +77,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return results.map(toDomainDocument);
+    return results.map((r) => toDomainDocument(r as unknown as PrismaDocumentRow));
   }
 
   async assignToProfile(documentId: string, profileId: string): Promise<Document> {
@@ -73,7 +87,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
       include: documentIncludeWithEvidences,
     });
 
-    return toDomainDocument(result);
+    return toDomainDocument(result as unknown as PrismaDocumentRow);
   }
 
   async updateDocumentType(
@@ -86,7 +100,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
       include: documentIncludeWithEvidences,
     });
 
-    return toDomainDocument(result);
+    return toDomainDocument(result as unknown as PrismaDocumentRow);
   }
 
   async delete(id: string): Promise<void> {

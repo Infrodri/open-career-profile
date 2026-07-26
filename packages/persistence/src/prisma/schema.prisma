@@ -409,6 +409,7 @@ model Document {
   mimeType      String
   sizeBytes     Int
   storagePath   String
+  contentHash   String?  // SHA-256 hash for deduplication
   documentType  String?
   extractedText String?  @db.Text
   createdAt     DateTime @default(now())
@@ -417,6 +418,7 @@ model Document {
   evidences     Evidence[]
 
   @@index([profileId])
+  @@index([contentHash])
 }
 
 model Evidence {

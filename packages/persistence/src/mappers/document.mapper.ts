@@ -24,6 +24,7 @@ export function toDomainDocument(prismaDoc: PrismaDocumentRow): Document {
     mimeType: prismaDoc.mimeType,
     sizeBytes: prismaDoc.sizeBytes,
     storagePath: prismaDoc.storagePath,
+    contentHash: prismaDoc.contentHash ?? undefined,
     documentType,
     extractedText: prismaDoc.extractedText ?? undefined,
     createdAt: prismaDoc.createdAt,
@@ -64,6 +65,7 @@ export interface PrismaDocumentRow {
   mimeType: string;
   sizeBytes: number;
   storagePath: string;
+  contentHash?: string | null;
   documentType: string | null;
   extractedText: string | null;
   createdAt: Date;

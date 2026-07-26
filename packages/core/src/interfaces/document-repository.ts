@@ -18,6 +18,9 @@ export interface DocumentRepository {
   /** Find a document by its id. */
   findById(id: string): Promise<Document | null>;
 
+  /** Find a document by content hash (for deduplication). */
+  findByContentHash(contentHash: string, profileId?: string): Promise<Document | null>;
+
   /** List every document belonging to a profile. */
   findByProfileId(profileId: string): Promise<Document[]>;
 

@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import {
   type Document,
   type DocumentRepository,
@@ -20,6 +20,17 @@ export interface StoreDocumentInput {
   profileId?: string;
 }
 
+/** Returned when a duplicate is detected instead of creating a new document. */
+export interface DuplicateDocumentResult {
+  duplicate: true;
+  existingDocument: Document;
+}
+
+/** Helper to check if a store result is a duplicate. */
+export function isDuplicate(result: Document | DuplicateDocumentResult): result is DuplicateDocumentResult {
+  return 'duplicate' in result && result.duplicate === true;
+}
+
 export class DocumentService {
   constructor(
     private readonly repository: DocumentRepository,
@@ -29,10 +40,23 @@ export class DocumentService {
   /**
    * Write the file to storage and record it in the database.
    *
+   * Deduplication: calculates SHA-256 of the file content. If a document with
+   * the same hash already exists (for the same profile or globally), returns
+   * the existing document as a DuplicateDocumentResult instead of creating a copy.
+   *
    * If the database insert fails the stored file is removed, so a failed upload
    * never leaves an orphan file behind.
    */
-  async store(input: StoreDocumentInput): Promise<Document> {
+  async store(input: StoreDocumentInput): Promise<Document | DuplicateDocumentResult> {
+    // Calculate content hash for deduplication
+    const contentHash = createHash('sha256').update(input.buffer).digest('hex');
+
+    // Check if this exact file already exists
+    const existing = await this.repository.findByContentHash(contentHash, input.profileId);
+    if (existing) {
+      return { duplicate: true, existingDocument: existing };
+    }
+
     const storagePath = await this.storage.save(input.buffer, input.fileName, input.profileId);
 
     try {
@@ -44,6 +68,7 @@ export class DocumentService {
         mimeType: input.mimeType,
         sizeBytes: input.buffer.byteLength,
         storagePath,
+        contentHash,
         documentType: input.documentType,
         extractedText: input.extractedText,
         createdAt: now,

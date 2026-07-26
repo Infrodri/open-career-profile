@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
 import { isDocumentType, isSectionType, type EvidenceTarget } from '@ocp/core';
 import { type OcrProvider } from '@ocp/ocr-adapter';
-import { type DocumentService } from '../services/document.service.js';
+import { type DocumentService, isDuplicate } from '../services/document.service.js';
 import { success, failure } from '../middleware/error-handler.js';
 
 const upload = multer({
@@ -82,7 +82,7 @@ export function createDocumentRoutes(
       const rawProfileId = typeof req.body?.profileId === 'string' ? req.body.profileId.trim() : '';
       const rawDocumentType = typeof req.body?.documentType === 'string' ? req.body.documentType : '';
 
-      const document = await documentService.store({
+      const result = await documentService.store({
         buffer: req.file.buffer,
         fileName: req.file.originalname,
         mimeType: req.file.mimetype,
@@ -90,6 +90,19 @@ export function createDocumentRoutes(
         ...(rawProfileId !== '' ? { profileId: rawProfileId } : {}),
         ...(isDocumentType(rawDocumentType) ? { documentType: rawDocumentType } : {}),
       });
+
+      // Handle duplicate detection
+      if (isDuplicate(result)) {
+        const existing = result.existingDocument;
+        res.status(409).json(failure(
+          'DUPLICATE_DOCUMENT',
+          `El archivo "${req.file.originalname}" ya fue subido previamente.`,
+          [{ existingDocumentId: existing.id, fileName: existing.fileName }],
+        ));
+        return;
+      }
+
+      const document = result;
 
       res.json(
         success({

@@ -14,6 +14,8 @@ export interface Document extends BaseEntity {
   mimeType: string;
   sizeBytes: number;
   storagePath: string;
+  /** SHA-256 hash of the file content, used for deduplication. */
+  contentHash?: string;
   documentType?: DocumentType;
   extractedText?: string;
 }
