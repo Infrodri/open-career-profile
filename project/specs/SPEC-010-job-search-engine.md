@@ -1,4 +1,11 @@
-# SPEC-007 — Motor de Búsqueda de Empleo y Generación Adaptada
+# SPEC-010 — Motor de Búsqueda de Empleo y Generación Adaptada
+
+> Estado: ❌ Pendiente
+> Prioridad: ALTA
+> Dependencias: SPEC-007 (reglas), SPEC-008 (plantillas dinámicas)
+>
+> Este feature extiende la plataforma para buscar empleo activamente,
+> evaluar ofertas contra el perfil del usuario, y generar CVs adaptados por oferta.
 
 ## Resumen
 

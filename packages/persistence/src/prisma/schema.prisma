@@ -63,6 +63,9 @@ model Profile {
 
   // Documents uploaded as evidence
   documents                          Document[]
+
+  // Job search configurations
+  jobSearchConfigs                   JobSearchConfig[]
 }
 
 model ProfileLink {
@@ -409,4 +412,57 @@ model Evidence {
 
   @@unique([documentId, sectionType, entryId])
   @@index([sectionType, entryId])
+}
+
+// =============================================================================
+// BÚSQUEDA DE EMPLEO (SPEC-007)
+// Configuration for job search and individual listings found by the scanner.
+// =============================================================================
+
+model JobSearchConfig {
+  id              String   @id @default(uuid())
+  profileId       String
+  targetTitles    String[] // ["Ingeniero de Sistemas", "Técnico Informático"]
+  locations       String[] // ["Sucre", "La Paz", "Remoto"]
+  modality        String?  // "presencial" | "remoto" | "hibrido"
+  minSalary       Int?
+  excludeKeywords String[] // ["junior", "pasantía"]
+  portals         String[] // ["computrabajo_bo", "linkedin", "trabajopolis"]
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  listings        JobListing[]
+
+  @@index([profileId])
+}
+
+model JobListing {
+  id              String   @id @default(uuid())
+  configId        String
+  portal          String   // "computrabajo_bo"
+  externalId      String?  // ID del portal original
+  title           String
+  company         String
+  location        String?
+  salary          String?
+  url             String
+  description     String?  @db.Text
+  postedDate      String?
+  // AI evaluation fields
+  score           Float?   // 1.0 - 5.0
+  matchSummary    String?  @db.Text
+  skillGaps       String[] // ["Docker", "Kubernetes"]
+  recommendation  String?  // "apply" | "maybe" | "skip"
+  // Status tracking
+  status          String   @default("new") // new | evaluated | applied | rejected | saved
+  cvGenerated     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  config          JobSearchConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([portal, externalId])
+  @@unique([url])
+  @@index([configId])
+  @@index([status])
 }

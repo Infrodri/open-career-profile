@@ -6,13 +6,13 @@
 
 ## Fase
 
-Development (Fase 7 — integración en curso)
+Development (Fase 9 — motor de búsqueda de empleo implementado)
 
 ---
 
 ## Trabajo Actual
 
-Flujo completo de captura de documentos implementado. Sistema funcional de punta a punta.
+Motor de búsqueda de empleo funcional. El sistema escanea portales, evalúa ofertas con IA contra el perfil del usuario, y permite tracking de postulaciones.
 
 ---
 
@@ -30,6 +30,10 @@ Flujo completo de captura de documentos implementado. Sistema funcional de punta
 | 8 | Frontend React completo en español con Design System | 2026-07 |
 | 9 | Flujo documento → OCR → IA → datos → perfil (endpoints + UI) | 2026-07 |
 | 10 | Docker Compose para despliegue completo | 2026-07 |
+| 11 | SPEC-006: Almacenamiento de documentos y evidencias (@ocp/storage-adapter) | 2026-07 |
+| 12 | SPEC-007: Motor de reglas institucionales (@ocp/rules-engine) — 28 tests | 2026-07 |
+| 13 | Plantillas institucionales CRUD (modelo + API + frontend) | 2026-07 |
+| 14 | SPEC-010: Motor de búsqueda de empleo (@ocp/job-scanner) — 25 tests | 2026-07 |
 
 ---
 
@@ -39,6 +43,8 @@ Flujo completo de captura de documentos implementado. Sistema funcional de punta
 |--------------|--------|
 | Crear/editar/ver perfil profesional | ✅ Funcional |
 | Subir documento (foto/PDF/imagen) | ✅ Funcional |
+| Almacenamiento persistente de documentos | ✅ Funcional (LocalFileStorage) |
+| Vinculación evidencia ↔ entradas del perfil | ✅ Funcional |
 | Extracción de texto de PDF | ✅ Funcional (pdf-parse) |
 | OCR de imágenes | ✅ Funcional (Tesseract.js) |
 | IA extrae perfil COMPLETO del documento | ✅ Funcional (todas las secciones a la vez) |
@@ -46,29 +52,45 @@ Flujo completo de captura de documentos implementado. Sistema funcional de punta
 | Usuario revisa y edita todo lo extraído | ✅ Funcional |
 | Importar perfil completo de una vez | ✅ Funcional (POST /api/profiles/import) |
 | Generar CV en HTML o PDF | ✅ Funcional |
-| Motor de reglas institucionales | ❌ Pendiente |
+| Plantillas institucionales (CRUD) | ✅ Funcional |
+| Validar perfil contra reglas institucionales | ✅ Funcional (POST /api/profiles/:id/validate) |
+| Generar CV adaptado con reglas institucionales | ✅ Funcional (ruleSetId en output) |
+| Motor de reglas: filtrar secciones, solo verificados, truncar | ✅ Funcional |
+| Búsqueda de empleo: configurar búsqueda | ✅ Funcional |
+| Búsqueda de empleo: escanear portales (zero-token) | ✅ Funcional (CompuTrabajo Bolivia) |
+| Búsqueda de empleo: evaluar ofertas con IA | ✅ Funcional (score 1-5, gaps, recomendación) |
+| Búsqueda de empleo: tracking de postulaciones | ✅ Funcional |
+| Búsqueda de empleo: UI completa (/empleo) | ✅ Funcional |
 | Sistema de plugins | ❌ Pendiente (arquitectura lista) |
 
 ---
 
 ## Siguiente
 
-Motor de reglas institucionales: permitir que diferentes instituciones definan sus requisitos de formato y contenido.
+Posibles mejoras al motor de búsqueda de empleo:
+- Providers adicionales (LinkedIn público, RemoteOK, Indeed Bolivia)
+- Generación de CV adaptado por oferta (integrar con rules-engine)
+- Programación de escaneos automáticos
+
+O continuar con SPECs pendientes:
+- SPEC-008: Plantillas Dinámicas
+- SPEC-009: Adaptación de Formato con IA
 
 ---
 
 ## Bloqueantes
 
-Ninguno.
+- `prisma generate` tiene un file lock en Windows (el .dll está en uso). Requiere cerrar procesos que usen la BD antes de regenerar. Los modelos JobSearchConfig y JobListing existen en el schema pero el client tipado no los refleja aún.
 
 ---
 
 ## Métricas
 
-- Paquetes: 6 (core, persistence, output-engine, ai-adapter, ocr-adapter, api) + 1 app web
-- Tests unitarios: 59
-- Endpoints API: 7 (CRUD + output + document extract + AI analyze + section add)
-- Templates: 2 (standard, minimal)
+- Paquetes: 8 (core, persistence, output-engine, ai-adapter, ocr-adapter, storage-adapter, rules-engine, job-scanner) + 1 API + 1 app web
+- Tests unitarios: 102 (rules-engine 28 + job-scanner 25 + output-engine 9 + api 20 + ai-adapter 13 + ocr-adapter 9 - 2 overlap)
+- Endpoints API: 22 (CRUD perfil + output + validate + document CRUD + evidence + AI analyze + templates + job-configs CRUD + scan + listings CRUD + evaluate)
+- Templates de renderizado: 2 (standard, minimal)
+- Portales de empleo: 1 (CompuTrabajo Bolivia)
 
 ---
 
