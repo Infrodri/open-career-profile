@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,47 +8,53 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
-      font-size: 10pt;
+      font-size: 9pt;
       line-height: 1.4;
       color: #333;
     }
     .container { max-width: 700px; margin: 0 auto; padding: 16px; }
-    .header { margin-bottom: 16px; }
-    .header h1 { font-size: 18pt; font-weight: 700; margin-bottom: 2px; }
-    .contact { font-size: 9pt; color: #666; }
+    .header { margin-bottom: 14px; }
+    .header h1 { font-size: 16pt; font-weight: 700; margin-bottom: 2px; }
+    .profesiones { font-size: 9pt; color: #555; margin-bottom: 4px; }
+    .contact { font-size: 8pt; color: #666; }
     .contact span::after { content: " · "; }
     .contact span:last-child::after { content: ""; }
-    .summary { font-size: 9pt; color: #555; margin-bottom: 14px; }
-    .section { margin-bottom: 14px; }
+    .summary { font-size: 9pt; color: #555; margin-bottom: 12px; }
+    .section { margin-bottom: 12px; }
     .section-title {
       font-size: 9pt;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: #000;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       padding-bottom: 2px;
       border-bottom: 1px solid #ccc;
     }
-    .entry { margin-bottom: 8px; }
+    .entry { margin-bottom: 6px; }
     .entry-line { display: flex; justify-content: space-between; }
-    .entry-title { font-weight: 600; font-size: 10pt; }
-    .entry-org { font-size: 9pt; color: #555; }
-    .entry-date { font-size: 8pt; color: #888; }
-    .entry-desc { font-size: 9pt; color: #555; margin-top: 2px; }
-    .skills-list { font-size: 9pt; }
+    .entry-title { font-weight: 600; font-size: 9pt; }
+    .entry-org { font-size: 8pt; color: #555; }
+    .entry-date { font-size: 7pt; color: #888; }
+    .entry-desc { font-size: 8pt; color: #555; margin-top: 1px; }
+    .skills-list { font-size: 8pt; }
     .skill-item { display: inline; }
     .skill-item::after { content: ", "; }
     .skill-item:last-child::after { content: ""; }
+    .idiomas { font-size: 8pt; }
   </style>
 </head>
 <body>
   <div class="container">
     <header class="header">
       <h1>{{personalInfo.fullName}}</h1>
+      {{#if personalInfo.profesiones.length}}
+      <div class="profesiones">{{#each personalInfo.profesiones}}{{this}}{{#unless @last}} · {{/unless}}{{/each}}</div>
+      {{/if}}
       <div class="contact">
         {{#if personalInfo.email}}<span>{{personalInfo.email}}</span>{{/if}}
         {{#if personalInfo.phone}}<span>{{personalInfo.phone}}</span>{{/if}}
+        {{#if personalInfo.identityDocument}}<span>CI: {{personalInfo.identityDocument}}</span>{{/if}}
         {{#if personalInfo.city}}<span>{{personalInfo.city}}{{#if personalInfo.country}}, {{personalInfo.country}}{{/if}}</span>{{/if}}
       </div>
     </header>
@@ -57,30 +63,60 @@
     <div class="summary">{{personalInfo.summary}}</div>
     {{/if}}
 
-    {{#if sections.workExperience.length}}
+    {{#if sections.formacionAcademica.length}}
     <section class="section">
-      <h2 class="section-title">Experience</h2>
-      {{#each sections.workExperience}}
+      <h2 class="section-title">Formación Académica</h2>
+      {{#each sections.formacionAcademica}}
       <div class="entry">
         <div class="entry-line">
-          <span class="entry-title">{{this.position}}</span>
+          <span class="entry-title">{{this.title}}</span>
           <span class="entry-date">{{this.startDate}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
         </div>
         <div class="entry-org">{{this.institution}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.postgrado.length}}
+    <section class="section">
+      <h2 class="section-title">Postgrado</h2>
+      {{#each sections.postgrado}}
+      <div class="entry">
+        <div class="entry-line">
+          <span class="entry-title">{{this.title}}</span>
+          <span class="entry-date">{{this.startDate}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
+        </div>
+        <div class="entry-org">{{this.institution}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.experienciaAdministrativa.length}}
+    <section class="section">
+      <h2 class="section-title">Experiencia Laboral</h2>
+      {{#each sections.experienciaAdministrativa}}
+      <div class="entry">
+        <div class="entry-line">
+          <span class="entry-title">{{this.position}}</span>
+          <span class="entry-date">{{this.startDate}}{{#if this.endDate}} – {{this.endDate}}{{else}} – Presente{{/if}}</span>
+        </div>
+        <div class="entry-org">{{this.institution}}{{#if this.location}} — {{this.location}}{{/if}}</div>
         {{#if this.description}}<div class="entry-desc">{{this.description}}</div>{{/if}}
       </div>
       {{/each}}
     </section>
     {{/if}}
 
-    {{#if sections.education.length}}
+    {{#if sections.experienciaDocente.length}}
     <section class="section">
-      <h2 class="section-title">Education</h2>
-      {{#each sections.education}}
+      <h2 class="section-title">Experiencia Docente</h2>
+      {{#each sections.experienciaDocente}}
       <div class="entry">
         <div class="entry-line">
-          <span class="entry-title">{{this.title}}</span>
-          <span class="entry-date">{{#if this.startDate}}{{this.startDate}}{{/if}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
+          <span class="entry-title">{{this.position}}</span>
+          <span class="entry-date">{{this.startDate}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
         </div>
         <div class="entry-org">{{this.institution}}</div>
       </div>
@@ -88,27 +124,137 @@
     </section>
     {{/if}}
 
-    {{#if sections.skills.length}}
+    {{#if sections.experienciaDesarrollo.length}}
     <section class="section">
-      <h2 class="section-title">Skills</h2>
-      <div class="skills-list">
-        {{#each sections.skills}}<span class="skill-item">{{this.name}}</span>{{/each}}
+      <h2 class="section-title">Experiencia en Desarrollo</h2>
+      {{#each sections.experienciaDesarrollo}}
+      <div class="entry">
+        <div class="entry-line">
+          <span class="entry-title">{{this.position}}</span>
+          <span class="entry-date">{{this.startDate}}{{#if this.endDate}} – {{this.endDate}}{{/if}}</span>
+        </div>
+        <div class="entry-org">{{this.institution}}</div>
       </div>
+      {{/each}}
     </section>
     {{/if}}
 
-    {{#if sections.certifications.length}}
+    {{#if sections.cursosEspecialidad.length}}
     <section class="section">
-      <h2 class="section-title">Certifications</h2>
-      {{#each sections.certifications}}
+      <h2 class="section-title">Cursos de Especialidad</h2>
+      {{#each sections.cursosEspecialidad}}
       <div class="entry">
         <div class="entry-line">
           <span class="entry-title">{{this.name}}</span>
-          <span class="entry-date">{{#if this.issueDate}}{{this.issueDate}}{{/if}}</span>
+          <span class="entry-date">{{this.issueDate}}</span>
         </div>
         <div class="entry-org">{{this.issuer}}</div>
       </div>
       {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.certificacionesCiberseguridad.length}}
+    <section class="section">
+      <h2 class="section-title">Certificaciones Ciberseguridad</h2>
+      {{#each sections.certificacionesCiberseguridad}}
+      <div class="entry">
+        <div class="entry-line">
+          <span class="entry-title">{{this.name}}</span>
+          <span class="entry-date">{{this.issueDate}}</span>
+        </div>
+        <div class="entry-org">{{this.issuer}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.certificacionesSistemasInstitucionales.length}}
+    <section class="section">
+      <h2 class="section-title">Sistemas Institucionales</h2>
+      {{#each sections.certificacionesSistemasInstitucionales}}
+      <div class="entry">
+        <div class="entry-title">{{this.name}} — {{this.issuer}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.cursosAdministrativos.length}}
+    <section class="section">
+      <h2 class="section-title">Cursos Administrativos</h2>
+      {{#each sections.cursosAdministrativos}}
+      <div class="entry">
+        <div class="entry-title">{{this.name}} — {{this.issuer}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.cursosProgramacion.length}}
+    <section class="section">
+      <h2 class="section-title">Cursos de Programación</h2>
+      {{#each sections.cursosProgramacion}}
+      <div class="entry">
+        <div class="entry-title">{{this.name}} — {{this.issuer}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.cursosGenerales.length}}
+    <section class="section">
+      <h2 class="section-title">Congresos y Conferencias</h2>
+      {{#each sections.cursosGenerales}}
+      <div class="entry">
+        <div class="entry-title">{{this.name}} — {{this.issuer}}</div>
+      </div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.reconocimientosExpositor.length}}
+    <section class="section">
+      <h2 class="section-title">Reconocimientos (Expositor)</h2>
+      {{#each sections.reconocimientosExpositor}}
+      <div class="entry"><div class="entry-title">{{this.name}} — {{this.issuer}}</div></div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.reconocimientosRepresentacion.length}}
+    <section class="section">
+      <h2 class="section-title">Reconocimientos (Representación)</h2>
+      {{#each sections.reconocimientosRepresentacion}}
+      <div class="entry"><div class="entry-title">{{this.name}} — {{this.issuer}}</div></div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.reconocimientosLaborales.length}}
+    <section class="section">
+      <h2 class="section-title">Reconocimientos Laborales</h2>
+      {{#each sections.reconocimientosLaborales}}
+      <div class="entry"><div class="entry-title">{{this.name}}</div></div>
+      {{/each}}
+    </section>
+    {{/if}}
+
+    {{#if sections.idiomas.length}}
+    <section class="section">
+      <h2 class="section-title">Idiomas</h2>
+      <div class="idiomas">
+        {{#each sections.idiomas}}{{this.name}} ({{this.level}}){{#unless @last}} · {{/unless}}{{/each}}
+      </div>
+    </section>
+    {{/if}}
+
+    {{#if sections.habilidades.length}}
+    <section class="section">
+      <h2 class="section-title">Habilidades</h2>
+      <div class="skills-list">
+        {{#each sections.habilidades}}<span class="skill-item">{{this.name}}</span>{{/each}}
+      </div>
     </section>
     {{/if}}
   </div>

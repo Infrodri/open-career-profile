@@ -22,6 +22,20 @@ export async function analyzeFormat(text: string): Promise<AnalyzeFormatResult> 
   return unwrap<AnalyzeFormatResult>(res);
 }
 
+export interface GenerateTemplateResult {
+  template: string;
+  notes: string;
+}
+
+export async function generateTemplate(text: string): Promise<GenerateTemplateResult> {
+  const res = await fetch('/api/ai/generate-template', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  return unwrap<GenerateTemplateResult>(res);
+}
+
 export async function adaptProfile(profileId: string, ruleSetId: string): Promise<AdaptProfileResult> {
   const res = await fetch('/api/ai/adapt-profile', {
     method: 'POST',

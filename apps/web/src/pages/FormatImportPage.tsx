@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { analyzeFormat, type AnalyzeFormatResult } from '../api/ai-format.api';
+import { analyzeFormat, generateTemplate, type AnalyzeFormatResult } from '../api/ai-format.api';
+import { createOutputTemplate } from '../api/output-template.api';
 import { DocumentUploader } from '../components/DocumentUploader';
 import { SECTION_LABELS, type SectionKey } from '../types/profile';
 
 export function FormatImportPage() {
   const [extractedText, setExtractedText] = useState('');
   const [result, setResult] = useState<AnalyzeFormatResult | null>(null);
+  const [generatedTemplate, setGeneratedTemplate] = useState<string>('');
   const [saved, setSaved] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [templateName, setTemplateName] = useState('');
 
   const handleFileSelected = async (file: File) => {
     setIsUploading(true);
@@ -21,6 +24,7 @@ export function FormatImportPage() {
       const text = json.data?.text ?? '';
       if (!text) throw new Error('No se pudo extraer texto del documento');
       setExtractedText(text);
+      setTemplateName(file.name.replace(/\.[^.]+$/, ''));
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error al procesar');
     } finally {
@@ -29,24 +33,46 @@ export function FormatImportPage() {
   };
 
   const analyzeMutation = useMutation({
-    mutationFn: () => analyzeFormat(extractedText),
+    mutationFn: async () => {
+      // Run both in parallel: analyze rules + generate visual template
+      const [rulesResult, templateResult] = await Promise.all([
+        analyzeFormat(extractedText),
+        generateTemplate(extractedText),
+      ]);
+      if (templateResult.template) {
+        setGeneratedTemplate(templateResult.template);
+      }
+      return rulesResult;
+    },
     onSuccess: (data) => setResult(data),
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const rules = result?.ruleSet ?? {};
-      const res = await fetch('/api/templates', {
+      const name = templateName || `Formato importado (${new Date().toLocaleDateString()})`;
+
+      // 1. Save as InstitutionalTemplate (rules)
+      const rulesRes = await fetch('/api/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: `Formato detectado (${new Date().toLocaleDateString()})`,
+          name,
           institution: 'Detectado por IA',
           rules,
         }),
       });
-      if (!res.ok) throw new Error('No se pudo guardar');
-      return res.json();
+      if (!rulesRes.ok) throw new Error('No se pudo guardar las reglas');
+
+      // 2. Save as OutputTemplate (visual design) if generated
+      if (generatedTemplate) {
+        await createOutputTemplate({
+          name: `Diseño: ${name}`,
+          description: 'Plantilla generada automáticamente a partir del formato institucional',
+          category: 'institutional',
+          source: generatedTemplate,
+        });
+      }
     },
     onSuccess: () => setSaved(true),
   });
@@ -94,7 +120,7 @@ export function FormatImportPage() {
               disabled={analyzeMutation.isPending}
               className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {analyzeMutation.isPending ? 'Analizando con IA...' : 'Analizar formato con IA'}
+              {analyzeMutation.isPending ? 'Analizando y generando plantilla...' : 'Analizar formato y generar plantilla'}
             </button>
             <button
               type="button"
@@ -134,6 +160,38 @@ export function FormatImportPage() {
 
           <RuleSetPreview ruleSet={result.ruleSet} />
 
+          {generatedTemplate && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Plantilla de diseño generada
+              </h4>
+              <div className="border border-slate-200 dark:border-slate-700 rounded-md overflow-hidden">
+                <iframe
+                  srcDoc={generatedTemplate}
+                  title="Preview de plantilla"
+                  className="w-full h-48 bg-white"
+                  sandbox=""
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Esta plantilla se usará para generar tu CV con el formato de la institución.
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Nombre para este formato
+            </label>
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Ej: Formato SENASAG"
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+            />
+          </div>
+
           <div className="flex gap-3 mt-4">
             <button
               type="button"
@@ -161,14 +219,18 @@ export function FormatImportPage() {
       {saved && (
         <section className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
           <h2 className="text-lg font-semibold text-green-700 dark:text-green-300 mb-2">
-            Formato guardado
+            Formato guardado correctamente
           </h2>
           <p className="text-sm text-green-600 dark:text-green-400">
-            El formato institucional se guardó correctamente. Lo puedes seleccionar al generar tu CV.
+            Se guardaron las reglas institucionales{generatedTemplate ? ' y la plantilla de diseño' : ''}.
+            Ahora al generar tu CV puedes seleccionar este formato y se llenará automáticamente con tus datos.
+          </p>
+          <p className="text-xs text-green-500 mt-2">
+            Ve a "Generar CV" → selecciona el formato institucional → genera tu documento.
           </p>
           <button
             type="button"
-            onClick={() => { setResult(null); setExtractedText(''); setSaved(false); }}
+            onClick={() => { setResult(null); setExtractedText(''); setSaved(false); setGeneratedTemplate(''); }}
             className="mt-3 text-sm text-green-700 dark:text-green-300 hover:underline"
           >
             Importar otro formato

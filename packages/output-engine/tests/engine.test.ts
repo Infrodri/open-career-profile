@@ -16,63 +16,97 @@ function createTestProfile(): ProfessionalProfile {
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-06-01'),
     personalInfo: {
-      fullName: 'Jane Doe',
-      email: 'jane@example.com',
-      phone: '+1-555-0100',
-      city: 'San Francisco',
-      country: 'USA',
-      summary: 'Senior software engineer with 10 years of experience.',
-      links: [{ label: 'GitHub', url: 'https://github.com/janedoe' }],
+      fullName: 'José Rodrigo Ríos Arcienega',
+      profesiones: ['Ingeniero en Sistemas Informáticos', 'Contador General'],
+      email: 'jose@example.com',
+      phone: '+591 71234567',
+      city: 'Sucre',
+      country: 'Bolivia',
+      identityDocument: '5669226 Ch.',
+      nacionalidad: 'Boliviano',
+      summary: 'Profesional con amplia experiencia en administración de sistemas y desarrollo.',
+      links: [],
     },
     sections: {
-      workExperience: [
+      formacionAcademica: [
         {
-          id: 'we-1',
+          id: 'fa-1',
           createdAt: new Date(),
           updatedAt: new Date(),
-          position: 'Senior Engineer',
-          institution: 'Acme Corp',
+          title: 'Licenciatura en Informática',
+          institution: 'U.M.R. P.S.F.X.CH.',
+          startDate: '2010',
+          endDate: '2015',
+          verified: true,
+        },
+      ],
+      postgrado: [
+        {
+          id: 'pg-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          title: 'Diplomado en Educación Superior',
+          institution: 'Universidad Andina',
+          startDate: '2020',
+          endDate: '2021',
+          verified: true,
+        },
+      ],
+      cursosEspecialidad: [],
+      certificacionesCiberseguridad: [],
+      certificacionesSistemasInstitucionales: [],
+      cursosAdministrativos: [
+        {
+          id: 'ca-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          name: 'Ley 1178 SAFCO',
+          issuer: 'CENCAP',
+          issueDate: '2019',
+          contenido: [],
+          verified: true,
+        },
+      ],
+      cursosProgramacion: [],
+      cursosGenerales: [],
+      experienciaAdministrativa: [
+        {
+          id: 'ea-1',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          position: 'Analista de Sistemas',
+          institution: 'Órgano Judicial',
           startDate: '2020-01',
-          endDate: 'present',
-          description: 'Leading backend team.',
-          achievements: ['Reduced latency by 40%', 'Mentored 5 junior developers'],
-          location: 'Remote',
+          endDate: '2024-06',
+          description: 'Desarrollo y mantenimiento de sistemas institucionales',
+          location: 'Sucre',
+          verified: true,
         },
       ],
-      education: [
+      experienciaDocente: [
         {
-          id: 'edu-1',
+          id: 'ed-1',
           createdAt: new Date(),
           updatedAt: new Date(),
-          title: 'B.Sc. Computer Science',
-          institution: 'MIT',
-          startDate: '2010-09',
-          endDate: '2014-06',
-          field: 'Computer Science',
+          position: 'Docente de Programación',
+          institution: 'USFX',
+          startDate: '2019',
+          endDate: '2020',
+          verified: true,
         },
       ],
-      skills: [
-        { id: 'sk-1', createdAt: new Date(), updatedAt: new Date(), name: 'TypeScript', level: 'expert', category: 'Languages' },
-        { id: 'sk-2', createdAt: new Date(), updatedAt: new Date(), name: 'Node.js', level: 'advanced', category: 'Runtime' },
+      experienciaDesarrollo: [],
+      reconocimientosExpositor: [],
+      reconocimientosRepresentacion: [],
+      reconocimientosLaborales: [],
+      idiomas: [
+        { id: 'i-1', createdAt: new Date(), updatedAt: new Date(), name: 'Español', level: 'native', certificado: true, verified: true },
+        { id: 'i-2', createdAt: new Date(), updatedAt: new Date(), name: 'Inglés', level: 'intermediate', certificado: false, verified: false },
       ],
-      certifications: [
-        {
-          id: 'cert-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          name: 'AWS Solutions Architect',
-          issuer: 'Amazon Web Services',
-          issueDate: '2023-03',
-        },
+      habilidades: [
+        { id: 'h-1', createdAt: new Date(), updatedAt: new Date(), name: 'TypeScript', category: 'técnica', level: 'advanced', verified: true },
+        { id: 'h-2', createdAt: new Date(), updatedAt: new Date(), name: 'PostgreSQL', category: 'técnica', level: 'advanced', verified: true },
       ],
-      courses: [],
-      languages: [],
-      projects: [],
-      publications: [],
-      awards: [],
-      affiliations: [],
-      volunteering: [],
-      references: [],
     },
   };
 }
@@ -94,7 +128,7 @@ describe('OutputEngine', () => {
       expect(html).toBeTruthy();
       expect(html.length).toBeGreaterThan(0);
       expect(html).toContain('<!DOCTYPE html>');
-      expect(html).toContain('Jane Doe');
+      expect(html).toContain('José Rodrigo Ríos Arcienega');
     });
 
     it('should produce non-empty HTML for the minimal template', () => {
@@ -102,32 +136,32 @@ describe('OutputEngine', () => {
       expect(html).toBeTruthy();
       expect(html.length).toBeGreaterThan(0);
       expect(html).toContain('<!DOCTYPE html>');
-      expect(html).toContain('Jane Doe');
+      expect(html).toContain('José Rodrigo Ríos Arcienega');
     });
 
-    it('should include work experience data in standard template', () => {
+    it('should include experiencia laboral in standard template', () => {
       const html = engine.generateHtml(profile, 'standard');
-      expect(html).toContain('Senior Engineer');
-      expect(html).toContain('Acme Corp');
-      expect(html).toContain('Reduced latency by 40%');
+      expect(html).toContain('Analista de Sistemas');
+      expect(html).toContain('Órgano Judicial');
+      expect(html).toContain('Desarrollo y mantenimiento de sistemas institucionales');
     });
 
-    it('should include education data in standard template', () => {
+    it('should include formacion academica in standard template', () => {
       const html = engine.generateHtml(profile, 'standard');
-      expect(html).toContain('B.Sc. Computer Science');
-      expect(html).toContain('MIT');
+      expect(html).toContain('Licenciatura en Informática');
+      expect(html).toContain('U.M.R. P.S.F.X.CH.');
     });
 
-    it('should include skills in standard template', () => {
+    it('should include habilidades in standard template', () => {
       const html = engine.generateHtml(profile, 'standard');
       expect(html).toContain('TypeScript');
-      expect(html).toContain('Node.js');
+      expect(html).toContain('PostgreSQL');
     });
 
-    it('should include certifications in standard template', () => {
+    it('should include cursos administrativos in standard template', () => {
       const html = engine.generateHtml(profile, 'standard');
-      expect(html).toContain('AWS Solutions Architect');
-      expect(html).toContain('Amazon Web Services');
+      expect(html).toContain('Ley 1178 SAFCO');
+      expect(html).toContain('CENCAP');
     });
 
     it('should throw for an unknown template ID', () => {

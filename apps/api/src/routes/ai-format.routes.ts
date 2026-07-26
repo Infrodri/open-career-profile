@@ -89,6 +89,43 @@ export function createAiFormatRoutes(
     }
   });
 
+  // POST /api/ai/generate-template — Generate a Handlebars template that replicates the format
+  router.post('/generate-template', validate(analyzeFormatSchema), async (req: Request, res: Response) => {
+    try {
+      const { text } = req.body;
+
+      if (!aiProvider.isAvailable()) {
+        res.json(success({
+          template: '',
+          notes: 'La IA no está disponible. No se puede generar la plantilla automáticamente.',
+        }));
+        return;
+      }
+
+      const prompt = buildGenerateTemplatePrompt(text);
+      const raw = await aiProvider.complete(prompt);
+
+      if (raw.startsWith('[AI')) {
+        res.json(success({
+          template: '',
+          notes: 'La IA no pudo generar la plantilla. Inténtalo de nuevo.',
+        }));
+        return;
+      }
+
+      // Extract HTML from the response (the AI might wrap it in markdown code blocks)
+      const template = extractHtmlFromResponse(raw);
+
+      res.json(success({
+        template,
+        notes: 'Plantilla generada. Revisa y ajusta si es necesario antes de guardar.',
+      }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al generar la plantilla';
+      res.status(500).json(failure('GENERATE_TEMPLATE_ERROR', msg));
+    }
+  });
+
   // POST /api/ai/adapt-profile — Adapt profile texts for a specific institutional format
   router.post('/adapt-profile', validate(adaptProfileSchema), async (req: Request, res: Response) => {
     try {
@@ -268,4 +305,86 @@ function parseAdaptProfileResponse(raw: string): AdaptProfileResult {
   } catch {
     return EMPTY_ADAPT_RESULT;
   }
+}
+
+/**
+ * Build a prompt that asks the AI to generate a Handlebars HTML template
+ * that replicates the structure and visual layout of the institutional format.
+ */
+function buildGenerateTemplatePrompt(formatText: string): string {
+  return `Eres un experto en diseño de CVs y HTML. Te doy el texto extraído de un formato/modelo de Hoja de Vida institucional. Tu trabajo es generar una plantilla HTML con Handlebars que REPLIQUE la estructura visual y el orden de ese formato, pero usando variables Handlebars para que se llene automáticamente con datos del perfil.
+
+TEXTO DEL FORMATO MODELO:
+---
+${formatText.slice(0, 6000)}
+---
+
+VARIABLES DISPONIBLES (usa exactamente estos nombres):
+
+Datos personales:
+- {{personalInfo.fullName}} — Nombre completo
+- {{personalInfo.profesiones}} — Array de profesiones (usar {{#each personalInfo.profesiones}})
+- {{personalInfo.email}}, {{personalInfo.phone}}, {{personalInfo.city}}, {{personalInfo.country}}
+- {{personalInfo.identityDocument}} — Cédula de Identidad
+- {{personalInfo.nacionalidad}}, {{personalInfo.sexo}}, {{personalInfo.estadoCivil}}
+- {{personalInfo.birthDate}}, {{personalInfo.libretaMilitar}}
+- {{personalInfo.summary}} — Perfil profesional / resumen
+
+Secciones (cada una es un array, usar {{#each sections.NOMBRE}}):
+- sections.formacionAcademica — campos: title, institution, startDate, endDate, detalle, tipo
+- sections.postgrado — campos: title, institution, startDate, endDate, detalle
+- sections.cursosEspecialidad — campos: name, issuer, issueDate, contenido[]
+- sections.certificacionesCiberseguridad — campos: name, issuer, issueDate, contenido[]
+- sections.certificacionesSistemasInstitucionales — campos: name, issuer, issueDate
+- sections.cursosAdministrativos — campos: name, issuer, issueDate, detalle, contenido[]
+- sections.cursosProgramacion — campos: name, issuer, issueDate, contenido[]
+- sections.cursosGenerales — campos: name, issuer, issueDate, detalle
+- sections.experienciaAdministrativa — campos: position, institution, startDate, endDate, description, location
+- sections.experienciaDocente — campos: position, institution, startDate, endDate, description
+- sections.experienciaDesarrollo — campos: position, institution, startDate, endDate, description, proyectos[]
+- sections.reconocimientosExpositor — campos: name, issuer, issueDate, detalle
+- sections.reconocimientosRepresentacion — campos: name, issuer, issueDate, detalle
+- sections.reconocimientosLaborales — campos: name, issuer, issueDate, detalle, motivo
+- sections.idiomas — campos: name, level
+- sections.habilidades — campos: name, category, level
+
+INSTRUCCIONES:
+1. Genera HTML completo (DOCTYPE, head con estilos, body).
+2. REPLICA la estructura visual del formato: si tiene tabla, usa tabla. Si tiene numeración, numérala. Si tiene encabezado con logo institucional, deja un espacio para ello.
+3. Usa los estilos CSS necesarios para que se vea profesional y similar al formato original.
+4. Incluye TODAS las secciones que el formato menciona, en el MISMO ORDEN que aparecen.
+5. Si el formato tiene una tabla con columnas (Nro, Descripción, Institución, Año), replica esa estructura.
+6. Si el formato pide "DATOS PERSONALES" como sección, inclúyela.
+7. Usa condicionales {{#if}} para secciones opcionales.
+8. Usa {{#each}} para iterar sobre arrays.
+9. El HTML debe poder renderizarse como PDF con Puppeteer (no uses JavaScript, solo HTML+CSS).
+10. Tamaño de papel: A4 (210mm x 297mm). Usa @page si es necesario.
+
+Responde SOLO con el HTML completo. Sin explicaciones, sin markdown. Solo el código HTML desde <!DOCTYPE html> hasta </html>.`;
+}
+
+/**
+ * Extract HTML content from the AI response.
+ * The AI might wrap it in markdown code blocks or add explanatory text.
+ */
+function extractHtmlFromResponse(raw: string): string {
+  // Try to extract from markdown code block
+  const codeBlockMatch = raw.match(/```(?:html)?\s*\n([\s\S]*?)\n```/);
+  if (codeBlockMatch?.[1]) {
+    return codeBlockMatch[1].trim();
+  }
+
+  // Try to find the HTML directly (starts with <!DOCTYPE or <html)
+  const htmlMatch = raw.match(/(<!DOCTYPE html[\s\S]*<\/html>)/i);
+  if (htmlMatch?.[1]) {
+    return htmlMatch[1].trim();
+  }
+
+  // Fallback: return the raw text assuming it's HTML
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('<')) {
+    return trimmed;
+  }
+
+  return '';
 }
