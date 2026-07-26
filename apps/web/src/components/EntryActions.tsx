@@ -164,6 +164,7 @@ function EditModal({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   const handleSave = async () => {
     setSaving(true);
@@ -187,10 +188,35 @@ function EditModal({
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    setUploadSuccess(null);
+
+    try {
+      // Upload and link as evidence
+      const result = await uploadDocument(file, { profileId });
+      await linkEvidence(result.documentId, [{ sectionType: sectionKey, entryId: entry.id }]);
+
+      // Mark as verified
+      await fetch(`/api/profiles/${profileId}/sections/${sectionKey}/${entry.id}/verify`, { method: 'PATCH' });
+
+      setUploadSuccess(`Documento "${file.name}" vinculado correctamente.`);
+      void queryClient.invalidateQueries({ queryKey: ['profile'] });
+      void queryClient.invalidateQueries({ queryKey: ['evidence'] });
+      void queryClient.invalidateQueries({ queryKey: ['documents'] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al subir documento');
+    }
+  };
+
   return (
     <Overlay onClose={onClose}>
       <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Editar entrada</h3>
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+
+      {/* Editable fields */}
+      <div className="space-y-3 max-h-64 overflow-y-auto">
         {editableFields.map(([key]) => (
           <div key={key}>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-0.5">
@@ -221,11 +247,43 @@ function EditModal({
           </div>
         ))}
       </div>
+
+      {/* Document upload section */}
+      <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">
+          Documento de respaldo
+        </label>
+        <div className="flex items-center gap-2">
+          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+            <UploadIcon className="h-3.5 w-3.5" />
+            {entry.verified ? 'Cambiar documento' : 'Subir documento'}
+            <input
+              type="file"
+              accept=".pdf,image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+          </label>
+          {entry.verified && (
+            <span className="text-[10px] text-green-600 dark:text-green-400 flex items-center gap-1">
+              <CheckIcon className="h-3 w-3" /> Verificado
+            </span>
+          )}
+        </div>
+        {uploadSuccess && (
+          <p className="mt-1.5 text-xs text-green-600 dark:text-green-400">{uploadSuccess}</p>
+        )}
+        <p className="mt-1 text-[10px] text-slate-400">
+          PDF o imagen del certificado. Se vincula automáticamente y marca como verificado.
+        </p>
+      </div>
+
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+
       <div className="flex gap-2 mt-4">
         <button type="button" onClick={handleSave} disabled={saving}
           className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
-          {saving ? 'Guardando...' : 'Guardar'}
+          {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
         <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:underline">
           Cancelar
