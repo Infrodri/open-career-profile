@@ -19,6 +19,8 @@
     "@ocp/core": "*",
     "@ocp/persistence": "*",
     "@ocp/output-engine": "*",
+    "@ocp/rules-engine": "*",
+    "@ocp/job-scanner": "*",
     "@ocp/ocr-adapter": "*",
     "@ocp/ai-adapter": "*",
     "@ocp/storage-adapter": "*",

@@ -8,6 +8,7 @@ import { DocumentCapturePage } from './pages/DocumentCapturePage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { GeneratePage } from './pages/GeneratePage';
 import { TemplatesPage } from './pages/TemplatesPage';
+import { JobSearchPage } from './pages/JobSearchPage';
 
 export function App() {
   return (
@@ -22,6 +23,7 @@ export function App() {
         <Route path="/documentos" element={<DocumentsPage />} />
         <Route path="/plantillas" element={<TemplatesPage />} />
         <Route path="/generar" element={<GeneratePage />} />
+        <Route path="/empleo" element={<JobSearchPage />} />
         {/* Anything else goes home instead of rendering a blank page. */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
