@@ -96,7 +96,7 @@ export function createDocumentRoutes(
         const existing = result.existingDocument;
         res.status(409).json(failure(
           'DUPLICATE_DOCUMENT',
-          `El archivo "${req.file.originalname}" ya fue subido previamente.`,
+          `Este documento ya fue cargado anteriormente ("${existing.fileName}"). No es necesario subirlo de nuevo.`,
           [{ existingDocumentId: existing.id, fileName: existing.fileName }],
         ));
         return;

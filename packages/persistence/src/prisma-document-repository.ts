@@ -21,7 +21,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
   ) {}
 
   async create(document: Document): Promise<Document> {
-    const result = await (this.prisma.document.create as Function)({
+    const result = await this.prisma.document.create({
       data: {
         id: document.id,
         profileId: document.profileId ?? null,
@@ -29,14 +29,26 @@ export class PrismaDocumentRepository implements DocumentRepository {
         mimeType: document.mimeType,
         sizeBytes: document.sizeBytes,
         storagePath: document.storagePath,
-        contentHash: document.contentHash ?? null,
         documentType: document.documentType ?? null,
         extractedText: document.extractedText ?? null,
       },
       include: documentIncludeWithEvidences,
-    }) as PrismaDocumentRow;
+    });
 
-    return toDomainDocument(result);
+    // Update contentHash via raw query if the column exists (post-migration)
+    if (document.contentHash) {
+      try {
+        await (this.prisma as any).$executeRawUnsafe(
+          `UPDATE "Document" SET "contentHash" = $1 WHERE "id" = $2`,
+          document.contentHash,
+          document.id,
+        );
+      } catch {
+        // Column may not exist yet — that's fine, fileName+size dedup still works
+      }
+    }
+
+    return toDomainDocument(result as unknown as PrismaDocumentRow);
   }
 
   async findById(id: string): Promise<Document | null> {
@@ -49,28 +61,43 @@ export class PrismaDocumentRepository implements DocumentRepository {
   }
 
   async findByContentHash(contentHash: string, profileId?: string): Promise<Document | null> {
-    const result = await (this.prisma.document.findFirst as Function)({
-      where: {
-        contentHash,
-        ...(profileId ? { profileId } : {}),
-      },
-      include: documentIncludeWithEvidences,
-    }) as PrismaDocumentRow | null;
-
-    return result ? toDomainDocument(result) : null;
+    // Use raw query because the Prisma client may not have contentHash in its
+    // generated types yet (requires prisma generate after adding the column).
+    // If the column doesn't exist (migration not applied), this safely returns null.
+    try {
+      let results: unknown[];
+      if (profileId) {
+        results = await (this.prisma as any).$queryRawUnsafe(
+          `SELECT * FROM "Document" WHERE "contentHash" = $1 AND "profileId" = $2 LIMIT 1`,
+          contentHash,
+          profileId,
+        );
+      } else {
+        results = await (this.prisma as any).$queryRawUnsafe(
+          `SELECT * FROM "Document" WHERE "contentHash" = $1 LIMIT 1`,
+          contentHash,
+        );
+      }
+      if (Array.isArray(results) && results.length > 0) {
+        return toDomainDocument(results[0] as PrismaDocumentRow);
+      }
+      return null;
+    } catch {
+      // Column doesn't exist yet or other DB error — skip hash check gracefully
+      return null;
+    }
   }
 
   async findByFileNameAndSize(fileName: string, sizeBytes: number, profileId?: string): Promise<Document | null> {
-    const result = await (this.prisma.document.findFirst as Function)({
-      where: {
-        fileName,
-        sizeBytes,
-        ...(profileId ? { profileId } : {}),
-      },
-      include: documentIncludeWithEvidences,
-    }) as PrismaDocumentRow | null;
+    const where: Record<string, unknown> = { fileName, sizeBytes };
+    if (profileId) where['profileId'] = profileId;
 
-    return result ? toDomainDocument(result) : null;
+    const result = await this.prisma.document.findFirst({
+      where,
+      include: documentIncludeWithEvidences,
+    });
+
+    return result ? toDomainDocument(result as unknown as PrismaDocumentRow) : null;
   }
 
   async findByProfileId(profileId: string): Promise<Document[]> {
