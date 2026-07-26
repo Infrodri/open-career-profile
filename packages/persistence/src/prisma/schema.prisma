@@ -380,6 +380,25 @@ model InstitutionalTemplate {
 }
 
 // =============================================================================
+// PLANTILLAS DE DISEÑO (SPEC-008)
+// User-editable Handlebars templates for rendering CV output.
+// =============================================================================
+
+model OutputTemplate {
+  id          String   @id @default(uuid())
+  name        String   // "Ejecutivo", "Minimalista Moderno"
+  description String?
+  category    String   @default("cv") // cv | portfolio | academic | institutional | government
+  source      String   @db.Text        // Handlebars HTML source
+  isBuiltIn   Boolean  @default(false) // Built-in templates cannot be edited or deleted
+  ruleSetId   String?                  // Optional: associated InstitutionalTemplate id
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
+
+// =============================================================================
 // DOCUMENTOS Y EVIDENCIAS (sin cambios respecto a SPEC-006)
 // =============================================================================
 

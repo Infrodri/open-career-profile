@@ -3,4 +3,4 @@
 export { OutputEngine } from './engine.js';
 export { type PdfRenderer } from './interfaces/renderer.js';
 export { PuppeteerAdapter } from './adapters/puppeteer.adapter.js';
-export { getTemplate, getTemplateIds, type TemplateId } from './templates/registry.js';
+export { templateRegistry, getTemplate, getTemplateIds, type CompiledTemplate, type BuiltInTemplateId } from './templates/registry.js';

@@ -18,7 +18,9 @@ import { createAiRoutes } from './routes/ai.routes.js';
 import { createProfileSectionRoutes } from './routes/profile-section.routes.js';
 import { createProfileImportRoutes } from './routes/profile-import.routes.js';
 import { createTemplateRoutes } from './routes/template.routes.js';
+import { createOutputTemplateRoutes } from './routes/output-template.routes.js';
 import { createJobSearchRoutes } from './routes/job-search.routes.js';
+import { createAiFormatRoutes } from './routes/ai-format.routes.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 export interface AppDependencies {
@@ -66,7 +68,9 @@ export function createApp({
   app.use('/api', createDocumentRoutes(ocrAdapter, documentService));
   app.use('/api', createJobSearchRoutes(prisma as never, jobScanner, profileService, aiAdapter));
   app.use('/api/templates', createTemplateRoutes(prisma, documentStorage));
+  app.use('/api/output-templates', createOutputTemplateRoutes(prisma as never));
   app.use('/api/ai', createAiRoutes(aiAdapter));
+  app.use('/api/ai', createAiFormatRoutes(aiAdapter, profileService, prisma as never));
 
   // Health check
   app.get('/health', (_req, res) => {
