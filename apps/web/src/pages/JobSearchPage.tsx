@@ -17,6 +17,9 @@ import { EmptyProfileState } from '../components/EmptyProfileState';
 
 const PORTALS = [
   { id: 'computrabajo_bo', label: 'CompuTrabajo Bolivia' },
+  { id: 'linkedin_public', label: 'LinkedIn (Público)' },
+  { id: 'trabajopolis_bo', label: 'Trabajopolis Bolivia' },
+  { id: 'remoteok', label: 'RemoteOK (Internacional)' },
 ];
 
 export function JobSearchPage() {

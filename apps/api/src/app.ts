@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { type DocumentRepository, type DocumentStorage, type ProfileRepository } from '@ocp/core';
 import { OutputEngine, PuppeteerAdapter } from '@ocp/output-engine';
 import { InstitutionalRulesEngine } from '@ocp/rules-engine';
-import { Scanner, ComputrabajoBoProvider } from '@ocp/job-scanner';
+import { Scanner, ComputrabajoBoProvider, LinkedInPublicProvider, TrabajopolisBoProvider, RemoteOkProvider } from '@ocp/job-scanner';
 import { TesseractAdapter, getOcrConfig } from '@ocp/ocr-adapter';
 import { OpenAiCompatibleAdapter, getAiConfig } from '@ocp/ai-adapter';
 import { ProfileService } from './services/profile.service.js';
@@ -58,6 +58,9 @@ export function createApp({
   // Job scanner
   const jobScanner = new Scanner();
   jobScanner.registerProvider(new ComputrabajoBoProvider());
+  jobScanner.registerProvider(new LinkedInPublicProvider());
+  jobScanner.registerProvider(new TrabajopolisBoProvider());
+  jobScanner.registerProvider(new RemoteOkProvider());
 
   // Routes
   app.use('/api/profiles', createProfileRoutes(profileService));
