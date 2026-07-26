@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 export type CompiledTemplate = ReturnType<typeof Handlebars.compile>;
 
 /** IDs of templates bundled with the package (always available). */
-const BUILT_IN_IDS = ['standard', 'minimal'] as const;
+const BUILT_IN_IDS = ['standard', 'minimal', 'senasag'] as const;
 export type BuiltInTemplateId = (typeof BUILT_IN_IDS)[number];
 
 /**

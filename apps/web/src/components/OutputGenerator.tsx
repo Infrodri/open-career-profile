@@ -90,6 +90,7 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
           >
             <option value="standard">Estándar</option>
             <option value="minimal">Minimalista</option>
+            <option value="senasag">Formato SENASAG (Hoja de Vida)</option>
           </select>
         </div>
 

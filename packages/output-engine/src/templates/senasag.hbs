@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>HOJA DE VIDA - {{personalInfo.fullName}}</title>
+  <style>
+    @page { size: A4; margin: 20mm 25mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 11pt;
+      line-height: 1.4;
+      color: #000;
+    }
+    .container { max-width: 700px; margin: 0 auto; }
+    .title {
+      text-align: center;
+      font-size: 14pt;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 20px;
+    }
+    .section-number {
+      font-weight: bold;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    .personal-data {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 5px;
+    }
+    .personal-table {
+      flex: 1;
+    }
+    .personal-table tr td {
+      padding: 2px 8px 2px 0;
+      vertical-align: top;
+      font-size: 11pt;
+    }
+    .personal-table tr td:first-child {
+      white-space: nowrap;
+      min-width: 160px;
+    }
+    .photo-container {
+      width: 100px;
+      height: 120px;
+      border: 1px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .photo-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .entry-row {
+      margin-left: 30px;
+      margin-bottom: 6px;
+      font-size: 10.5pt;
+    }
+    .entry-row .date {
+      display: inline-block;
+      min-width: 90px;
+    }
+    .entry-row .desc {
+      display: inline;
+    }
+    .subsection {
+      margin-left: 20px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">HOJA DE VIDA</div>
+
+    {{!-- 1. DATOS PERSONALES --}}
+    <p class="section-number">1. <span class="section-title">DATOS PERSONALES:</span></p>
+    <div class="personal-data">
+      <table class="personal-table">
+        <tr><td>Nombre y Apellido</td><td>{{personalInfo.fullName}}</td></tr>
+        {{#if personalInfo.profesiones.length}}
+        <tr><td>Profesión</td><td>{{#each personalInfo.profesiones}}{{this}}{{#unless @last}}<br>{{/unless}}{{/each}}</td></tr>
+        {{/if}}
+        {{#if personalInfo.birthDate}}<tr><td>Fecha de Nacimiento</td><td>{{personalInfo.birthDate}}</td></tr>{{/if}}
+        {{#if personalInfo.nacionalidad}}<tr><td>Nacionalidad</td><td>{{personalInfo.nacionalidad}}</td></tr>{{/if}}
+        {{#if personalInfo.estadoCivil}}<tr><td>Estado Civil</td><td>{{personalInfo.estadoCivil}}</td></tr>{{/if}}
+        {{#if personalInfo.identityDocument}}<tr><td>C. I.</td><td>{{personalInfo.identityDocument}}</td></tr>{{/if}}
+        {{#if personalInfo.libretaMilitar}}<tr><td>Libreta de Servicio Militar</td><td>{{personalInfo.libretaMilitar}}</td></tr>{{/if}}
+        {{#if personalInfo.phone}}<tr><td>N° Celular</td><td>{{personalInfo.phone}}</td></tr>{{/if}}
+        {{#if personalInfo.email}}<tr><td>Correo Electrónico</td><td>{{personalInfo.email}}</td></tr>{{/if}}
+        {{#if personalInfo.city}}<tr><td>Domicilio</td><td>{{personalInfo.city}}{{#if personalInfo.country}}, {{personalInfo.country}}{{/if}}</td></tr>{{/if}}
+      </table>
+      <div class="photo-container">
+        {{#if personalInfo.photo}}
+        <img src="{{personalInfo.photo}}" alt="Foto">
+        {{else}}
+        <span style="font-size:8pt;color:#666;text-align:center">FOTO</span>
+        {{/if}}
+      </div>
+    </div>
+
+    {{!-- 2. ESTUDIOS SECUNDARIOS (Bachiller) --}}
+    {{#if sections.formacionAcademica.length}}
+    <p class="section-number">2. <span class="section-title">ESTUDIOS SECUNDARIOS:</span></p>
+    <div class="subsection">
+      {{#each sections.formacionAcademica}}
+      {{#ifEquals this.tipo "bachiller"}}
+      <div class="entry-row">
+        <span class="date">Año {{this.endDate}}</span>
+        <span class="desc">{{this.title}} {{#if this.detalle}}{{this.detalle}}{{/if}} {{this.institution}}</span>
+      </div>
+      {{/ifEquals}}
+      {{/each}}
+    </div>
+
+    {{!-- 3. ESTUDIO SUPERIOR A NIVEL LICENCIATURA --}}
+    <p class="section-number">3. <span class="section-title">ESTUDIO SUPERIOR A NIVEL LICENCIATURA:</span></p>
+    <div class="subsection">
+      {{#each sections.formacionAcademica}}
+      {{#ifEquals this.tipo "bachiller"}}{{else}}
+      <div class="entry-row">
+        <span class="date">{{this.startDate}}-{{this.endDate}}</span>
+        <span class="desc">{{this.title}} {{#if this.detalle}}{{this.detalle}}{{/if}} {{this.institution}}</span>
+      </div>
+      {{/ifEquals}}
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- POSTGRADO --}}
+    {{#if sections.postgrado.length}}
+    <p class="section-number">4. <span class="section-title">POSTGRADO:</span></p>
+    <div class="subsection">
+      {{#each sections.postgrado}}
+      <div class="entry-row">
+        <span class="date">{{this.startDate}}-{{this.endDate}}</span>
+        <span class="desc">{{this.title}} — {{this.institution}} {{#if this.detalle}}{{this.detalle}}{{/if}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- CAPACITACIÓN (Cursos administrativos + generales + programación) --}}
+    {{#if sections.cursosAdministrativos.length}}
+    <p class="section-number">5. <span class="section-title">CAPACITACION:</span></p>
+    <div class="subsection">
+      {{#each sections.cursosAdministrativos}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">Curso/Talleres {{this.name}} {{this.issuer}} {{#if this.detalle}}{{this.detalle}}{{/if}}</span>
+      </div>
+      {{/each}}
+      {{#each sections.cursosGenerales}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}} {{#if this.detalle}}{{this.detalle}}{{/if}}</span>
+      </div>
+      {{/each}}
+      {{#each sections.cursosProgramacion}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- CURSOS DE ESPECIALIDAD --}}
+    {{#if sections.cursosEspecialidad.length}}
+    <p class="section-number">6. <span class="section-title">CURSOS DE ESPECIALIDAD:</span></p>
+    <div class="subsection">
+      {{#each sections.cursosEspecialidad}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}}{{#if this.contenido.length}} ({{#each this.contenido}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}){{/if}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- CERTIFICACIONES --}}
+    {{#if sections.certificacionesCiberseguridad.length}}
+    <p class="section-number">7. <span class="section-title">CERTIFICACIONES DE CIBERSEGURIDAD:</span></p>
+    <div class="subsection">
+      {{#each sections.certificacionesCiberseguridad}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if sections.certificacionesSistemasInstitucionales.length}}
+    <p class="section-number">8. <span class="section-title">CERTIFICACIONES DE SISTEMAS INSTITUCIONALES:</span></p>
+    <div class="subsection">
+      {{#each sections.certificacionesSistemasInstitucionales}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- EXPERIENCIA LABORAL --}}
+    {{#if sections.experienciaAdministrativa.length}}
+    <p class="section-number">9. <span class="section-title">EXPERIENCIA LABORAL:</span></p>
+    <div class="subsection">
+      {{#each sections.experienciaAdministrativa}}
+      <div class="entry-row">
+        <span class="date">{{this.startDate}}-{{this.endDate}}</span>
+        <span class="desc"><strong>{{this.position}}</strong> — {{this.institution}}{{#if this.location}} ({{this.location}}){{/if}}{{#if this.description}}<br>{{this.description}}{{/if}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- EXPERIENCIA DOCENTE --}}
+    {{#if sections.experienciaDocente.length}}
+    <p class="section-number">10. <span class="section-title">EXPERIENCIA DOCENTE:</span></p>
+    <div class="subsection">
+      {{#each sections.experienciaDocente}}
+      <div class="entry-row">
+        <span class="date">{{this.startDate}}-{{this.endDate}}</span>
+        <span class="desc"><strong>{{this.position}}</strong> — {{this.institution}}{{#if this.description}}<br>{{this.description}}{{/if}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- EXPERIENCIA EN DESARROLLO --}}
+    {{#if sections.experienciaDesarrollo.length}}
+    <p class="section-number">11. <span class="section-title">EXPERIENCIA EN DESARROLLO DE SOFTWARE:</span></p>
+    <div class="subsection">
+      {{#each sections.experienciaDesarrollo}}
+      <div class="entry-row">
+        <span class="date">{{this.startDate}}-{{this.endDate}}</span>
+        <span class="desc"><strong>{{this.position}}</strong> — {{this.institution}}{{#if this.description}}<br>{{this.description}}{{/if}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- RECONOCIMIENTOS --}}
+    {{#if sections.reconocimientosExpositor.length}}
+    <p class="section-number">12. <span class="section-title">RECONOCIMIENTOS COMO EXPOSITOR:</span></p>
+    <div class="subsection">
+      {{#each sections.reconocimientosExpositor}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if sections.reconocimientosRepresentacion.length}}
+    <p class="section-number">13. <span class="section-title">RECONOCIMIENTOS POR REPRESENTACIÓN:</span></p>
+    <div class="subsection">
+      {{#each sections.reconocimientosRepresentacion}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}} — {{this.issuer}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if sections.reconocimientosLaborales.length}}
+    <p class="section-number">14. <span class="section-title">RECONOCIMIENTOS LABORALES:</span></p>
+    <div class="subsection">
+      {{#each sections.reconocimientosLaborales}}
+      <div class="entry-row">
+        <span class="date">{{this.issueDate}}</span>
+        <span class="desc">{{this.name}}{{#if this.motivo}} — {{this.motivo}}{{/if}}</span>
+      </div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- IDIOMAS --}}
+    {{#if sections.idiomas.length}}
+    <p class="section-number">15. <span class="section-title">IDIOMAS:</span></p>
+    <div class="subsection">
+      {{#each sections.idiomas}}
+      <div class="entry-row">{{this.name}} — Nivel: {{this.level}}</div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{!-- HABILIDADES --}}
+    {{#if sections.habilidades.length}}
+    <p class="section-number">16. <span class="section-title">HABILIDADES Y COMPETENCIAS:</span></p>
+    <div class="subsection">
+      {{#each sections.habilidades}}
+      <div class="entry-row">{{this.name}}{{#if this.category}} ({{this.category}}){{/if}}{{#if this.level}} — {{this.level}}{{/if}}</div>
+      {{/each}}
+    </div>
+    {{/if}}
+
+  </div>
+</body>
+</html>
