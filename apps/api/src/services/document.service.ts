@@ -51,10 +51,20 @@ export class DocumentService {
     // Calculate content hash for deduplication
     const contentHash = createHash('sha256').update(input.buffer).digest('hex');
 
-    // Check if this exact file already exists
+    // Check if this exact file already exists (by hash OR by fileName + size)
     const existing = await this.repository.findByContentHash(contentHash, input.profileId);
     if (existing) {
       return { duplicate: true, existingDocument: existing };
+    }
+
+    // Secondary check: same fileName + same size for the same profile (catches pre-hash uploads)
+    const byName = await this.repository.findByFileNameAndSize(
+      input.fileName,
+      input.buffer.byteLength,
+      input.profileId,
+    );
+    if (byName) {
+      return { duplicate: true, existingDocument: byName };
     }
 
     const storagePath = await this.storage.save(input.buffer, input.fileName, input.profileId);

@@ -49,6 +49,11 @@ function createFakeRepository(): DocumentRepository & { documents: Document[]; e
         d.contentHash === contentHash && (profileId ? d.profileId === profileId : true),
       ) ?? null;
     }),
+    findByFileNameAndSize: vi.fn(async (fileName: string, sizeBytes: number, profileId?: string) => {
+      return documents.find((d) =>
+        d.fileName === fileName && d.sizeBytes === sizeBytes && (profileId ? d.profileId === profileId : true),
+      ) ?? null;
+    }),
     findByProfileId: vi.fn(async (profileId: string) =>
       documents.filter((d) => d.profileId === profileId),
     ),

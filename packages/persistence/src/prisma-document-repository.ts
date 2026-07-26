@@ -60,6 +60,19 @@ export class PrismaDocumentRepository implements DocumentRepository {
     return result ? toDomainDocument(result) : null;
   }
 
+  async findByFileNameAndSize(fileName: string, sizeBytes: number, profileId?: string): Promise<Document | null> {
+    const result = await (this.prisma.document.findFirst as Function)({
+      where: {
+        fileName,
+        sizeBytes,
+        ...(profileId ? { profileId } : {}),
+      },
+      include: documentIncludeWithEvidences,
+    }) as PrismaDocumentRow | null;
+
+    return result ? toDomainDocument(result) : null;
+  }
+
   async findByProfileId(profileId: string): Promise<Document[]> {
     const results = await this.prisma.document.findMany({
       where: { profileId },
