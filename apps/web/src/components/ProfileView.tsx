@@ -5,7 +5,7 @@ import type {
   SectionKey,
 } from '../types/profile';
 import { SECTION_KEYS, SECTION_LABELS } from '../types/profile';
-import { VerifyEntryButton } from './VerifyEntryButton';
+import { EntryActions } from './EntryActions';
 
 interface ProfileViewProps {
   profile: ProfessionalProfile;
@@ -173,16 +173,13 @@ function EntryCard({
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{dateRange}</p>
           )}
         </div>
-        {/* Action: Verify or View certificate */}
-        <div className="shrink-0">
-          <VerifyEntryButton
-            profileId={profileId}
-            sectionKey={sectionKey}
-            entryId={entry.id}
-            verified={entry.verified}
-            evidence={evidence}
-          />
-        </div>
+        {/* Actions: View, Edit, Verify */}
+        <EntryActions
+          profileId={profileId}
+          sectionKey={sectionKey}
+          entry={entry}
+          evidence={evidence}
+        />
       </div>
 
       {typeof detalle === 'string' && detalle !== '' && (
