@@ -116,15 +116,30 @@ describe('OpenAiCompatibleAdapter', () => {
       expect(result).toContain('500');
     });
 
-    it('handles network/fetch errors gracefully', async () => {
+     it('handles network/fetch errors gracefully without leaking details', async () => {
       vi.mocked(fetch).mockRejectedValue(new Error('Connection refused'));
 
       const adapter = new OpenAiCompatibleAdapter(validConfig);
       const result = await adapter.complete('Hello');
 
       expect(result).toContain('[AI error]');
-      expect(result).toContain('Connection refused');
+      // The raw message must never reach the caller: it can embed the URL.
+      expect(result).not.toContain('Connection refused');
     });
+
+    it('never echoes the base URL when it is misconfigured', async () => {
+      // Simulates an API key pasted into OCP_AI_BASE_URL.
+      const adapter = new OpenAiCompatibleAdapter({
+        ...validConfig,
+        baseUrl: 'sk-or-v1-secret-value',
+      });
+
+      const result = await adapter.complete('Hello');
+
+      expect(result).not.toContain('sk-or-v1-secret-value');
+      expect(result).toContain('[AI unavailable]');
+    });
+
 
     it('handles empty choices in response', async () => {
       const mockResponse = {

@@ -16,4 +16,9 @@ export interface AiProviderConfig {
   model: string;
   maxTokens: number;
   temperature: number;
+  /**
+   * Public URL of the deployment, used for provider attribution headers
+   * (OpenRouter requires HTTP-Referer). Optional: falls back to localhost.
+   */
+  publicUrl?: string;
 }

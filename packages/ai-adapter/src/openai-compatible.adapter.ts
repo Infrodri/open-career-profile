@@ -13,6 +13,11 @@ interface ChatCompletionResponse {
  * Supports OpenAI, Ollama, OpenRouter, Together, and others.
  *
  * Uses native fetch() — no external SDK required.
+ *
+ * Security note: error messages returned by this adapter are always
+ * sanitized. Native fetch() embeds the target URL in some failures, so
+ * echoing a raw error would leak the configured base URL — which, when
+ * misconfigured, may contain an API key.
  */
 export class OpenAiCompatibleAdapter implements AiProvider {
   private readonly config: AiProviderConfig;
@@ -21,22 +26,35 @@ export class OpenAiCompatibleAdapter implements AiProvider {
     this.config = config;
   }
 
+  /**
+   * Whether the provider is usable.
+   *
+   * The base URL must be a real HTTP(S) URL. A value that is not a URL
+   * (for example an API key pasted into OCP_AI_BASE_URL) counts as
+   * "not configured", so no request is ever built from it.
+   */
   isAvailable(): boolean {
-    return this.config.baseUrl !== '' && this.config.model !== '';
+    const hasHttpBaseUrl =
+      this.config.baseUrl.startsWith('http://') || this.config.baseUrl.startsWith('https://');
+
+    return hasHttpBaseUrl && this.config.model !== '';
   }
 
   /**
    * Quick connectivity check: calls the provider with a trivial prompt.
-   * Returns true if the provider answers (even if the answer is garbage).
+   * Returns ok=true if the provider answers, even if the answer is garbage.
    */
   async checkConnection(): Promise<{ ok: boolean; model: string; error?: string }> {
     if (!this.isAvailable()) {
-      return { ok: false, model: this.config.model, error: 'Provider not configured' };
+      return {
+        ok: false,
+        model: this.config.model,
+        error: 'Proveedor de IA no configurado. Revisa OCP_AI_BASE_URL y OCP_AI_MODEL.',
+      };
     }
 
     try {
-      const url = `${this.config.baseUrl}/chat/completions`;
-      const response = await fetch(url, {
+      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: this.buildHeaders(),
         body: JSON.stringify({
@@ -47,14 +65,16 @@ export class OpenAiCompatibleAdapter implements AiProvider {
       });
 
       if (!response.ok) {
-        const text = await response.text().catch(() => '');
-        return { ok: false, model: this.config.model, error: `HTTP ${response.status}: ${text.slice(0, 200)}` };
+        return {
+          ok: false,
+          model: this.config.model,
+          error: `El proveedor respondió HTTP ${response.status}.`,
+        };
       }
 
       return { ok: true, model: this.config.model };
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      return { ok: false, model: this.config.model, error: message };
+    } catch (error: unknown) {
+      return { ok: false, model: this.config.model, error: this.safeErrorMessage(error) };
     }
   }
 
@@ -63,31 +83,26 @@ export class OpenAiCompatibleAdapter implements AiProvider {
       return '[AI unavailable] Provider is not configured.';
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60_000); // 60s timeout
+
     try {
-      const url = `${this.config.baseUrl}/chat/completions`;
-
-      const body = JSON.stringify({
-        model: this.config.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
-      });
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60_000); // 60s timeout
-
-      const response = await fetch(url, {
+      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: this.buildHeaders(),
-        body,
+        body: JSON.stringify({
+          model: this.config.model,
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: this.config.maxTokens,
+          temperature: this.config.temperature,
+        }),
         signal: controller.signal,
       });
 
-      clearTimeout(timeout);
-
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        return `[AI error] HTTP ${response.status}: ${errorText}`;
+        // The provider's own error body is safe to surface, but keep it short.
+        const detail = await response.text().catch(() => '');
+        return `[AI error] HTTP ${response.status}: ${detail.slice(0, 200)}`;
       }
 
       const data = (await response.json()) as ChatCompletionResponse;
@@ -102,9 +117,38 @@ export class OpenAiCompatibleAdapter implements AiProvider {
       if (error instanceof Error && error.name === 'AbortError') {
         return '[AI error] La IA tardó demasiado en responder (timeout 60s).';
       }
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      return `[AI error] ${message}`;
+      return `[AI error] ${this.safeErrorMessage(error)}`;
+    } finally {
+      clearTimeout(timeout);
     }
+  }
+
+  /**
+   * Map an unknown error to a message that is safe to return to a caller.
+   * The raw message is never included: fetch() embeds the target URL in
+   * several failure modes, and that URL may hold a misconfigured secret.
+   */
+  private safeErrorMessage(error: unknown): string {
+    const raw = error instanceof Error ? error.message : '';
+
+    if (raw.includes('Failed to parse URL') || raw.includes('Invalid URL')) {
+      return 'La URL del proveedor de IA no es válida. Revisa OCP_AI_BASE_URL.';
+    }
+    if (
+      raw.includes('ENOTFOUND') ||
+      raw.includes('EAI_AGAIN') ||
+      raw.includes('getaddrinfo')
+    ) {
+      return 'No se pudo resolver el host del proveedor de IA. Revisa OCP_AI_BASE_URL.';
+    }
+    if (raw.includes('ECONNREFUSED')) {
+      return 'El proveedor de IA rechazó la conexión.';
+    }
+    if (raw.includes('certificate') || raw.includes('CERT_')) {
+      return 'Error de certificado TLS al conectar con el proveedor de IA.';
+    }
+
+    return 'No se pudo conectar con el proveedor de IA.';
   }
 
   private buildHeaders(): Record<string, string> {
@@ -116,9 +160,9 @@ export class OpenAiCompatibleAdapter implements AiProvider {
       headers['Authorization'] = `Bearer ${this.config.apiKey}`;
     }
 
-    // OpenRouter requires these headers for attribution.
+    // OpenRouter uses these headers for attribution of the calling app.
     if (this.config.baseUrl.includes('openrouter.ai')) {
-      headers['HTTP-Referer'] = 'http://localhost:3000';
+      headers['HTTP-Referer'] = this.config.publicUrl ?? 'http://localhost:3000';
       headers['X-Title'] = 'Open Career Profile';
     }
 
