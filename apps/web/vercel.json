@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://ocp-api.onrender.com/api/:path*" },
+    { "source": "/health", "destination": "https://ocp-api.onrender.com/health" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
