@@ -135,6 +135,113 @@ Servicios:
 
 ---
 
+## Deploy con Supabase (Base de datos en la nube)
+
+Supabase ofrece PostgreSQL gratuito con 500MB, sin límite de tiempo (a diferencia de Render que borra en 90 días).
+
+### 1. Crear proyecto en Supabase
+
+1. Ve a [supabase.com](https://supabase.com) → crear cuenta
+2. Dashboard → **New Project**
+3. Configurar:
+   - Organization: selecciona o crea una
+   - Name: `open-career-profile`
+   - Database Password: genera una segura (guardarla)
+   - Region: South America (São Paulo) o la más cercana
+   - Plan: Free
+4. Esperar que se cree (~2 min)
+
+### 2. Obtener la Connection String
+
+1. En el proyecto → **Settings** → **Database**
+2. Buscar sección **Connection string** → **URI**
+3. Copiar la URI que tiene este formato:
+   ```
+   postgresql://postgres.[REF]:[PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
+   ```
+4. **Importante:** Para Prisma, usar el puerto `5432` (Direct connection), no el pooler `6543`:
+   ```
+   postgresql://postgres.[REF]:[PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?pgbouncer=true
+   ```
+
+### 3. Configurar en tu proyecto local
+
+```bash
+# En tu .env local, reemplaza OCP_DATABASE_URL:
+OCP_DATABASE_URL=postgresql://postgres.abcdefgh:[TU_PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?pgbouncer=true
+```
+
+### 4. Sincronizar esquema
+
+```bash
+npx prisma db push --schema=packages/persistence/src/prisma/schema.prisma
+```
+
+Esto crea todas las tablas en Supabase. Puedes verificar en el Dashboard → **Table Editor**.
+
+### 5. Usar con Render (Backend) + Supabase (DB)
+
+En Render, la variable de entorno sería:
+```
+OCP_DATABASE_URL=postgresql://postgres.abcdefgh:[TU_PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?pgbouncer=true
+```
+
+Ya no necesitas el PostgreSQL de Render (que se borra en 90 días).
+
+### 6. Usar con Vercel (Backend serverless) + Supabase (DB)
+
+Si quieres usar Vercel Functions en vez de Render para el backend:
+
+En `apps/web/vercel.json` cambiar el destino de las rewrites:
+```json
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+Y crear `apps/web/api/` con serverless functions (requiere refactorización de Express a Vercel Functions — más avanzado).
+
+### Ventajas de Supabase sobre Render PostgreSQL
+
+| Aspecto | Render Free | Supabase Free |
+|---------|-------------|---------------|
+| Duración | 90 días, luego se borra | Sin límite de tiempo |
+| Storage | 1GB | 500MB |
+| Rows | Sin límite | Sin límite |
+| Dashboard | No | Sí (Table Editor, SQL Editor) |
+| Backups | No | Diarios (7 días) |
+| Auth | No incluye | Incluye (opcional) |
+| Realtime | No | Incluye (opcional) |
+
+### Nota sobre Prisma + Supabase
+
+Supabase usa PgBouncer por defecto. Para que Prisma funcione:
+
+1. Usar `?pgbouncer=true` en la connection string del pooler (puerto 6543)
+2. O usar la **Direct connection** (puerto 5432) para migraciones:
+
+```env
+# Para la aplicación (usa pooler):
+OCP_DATABASE_URL=postgresql://postgres.ref:pass@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+# Para migraciones (usa conexión directa):
+DIRECT_URL=postgresql://postgres.ref:pass@aws-0-sa-east-1.pooler.supabase.com:5432/postgres
+```
+
+En `schema.prisma`, agregar:
+```prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("OCP_DATABASE_URL")
+  directUrl = env("DIRECT_URL")  // Para migraciones
+}
+```
+
+---
+
 ## Notas Importantes
 
 ### Render Free Tier
