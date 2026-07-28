@@ -57,12 +57,12 @@ export class InstitutionalRulesEngine implements RulesEngine {
       }
     }
 
-    // Check photo requirement
+    // Check photo requirement — warn but don't block
     if (rules.requirePhoto && !profile.personalInfo.photo) {
       issues.push({
-        severity: 'error',
+        severity: 'warning',
         code: 'MISSING_PHOTO',
-        message: 'Se requiere una foto de perfil.',
+        message: 'Se recomienda incluir una foto de perfil para este formato.',
         field: 'personalInfo.photo',
       });
     }
