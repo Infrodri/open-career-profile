@@ -23,7 +23,21 @@ export function FillFormPage() {
     try {
       const formData = new FormData();
       formData.append('document', file);
+
+      // Use extract endpoint — if it returns 409 (duplicate), fetch the text
+      // from the existing document instead of failing
       const res = await fetch('/api/documents/extract', { method: 'POST', body: formData });
+
+      if (res.status === 409) {
+        // Duplicate — try to read the file directly as text on the client
+        const text = await readFileAsText(file);
+        if (text) {
+          setExtractedText(text);
+          return;
+        }
+        throw new Error('Este archivo ya fue subido. Intenta con otro o usa "Agregar Documento" primero.');
+      }
+
       if (!res.ok) throw new Error('Error al procesar');
       const json = await res.json();
       const text = json.data?.text ?? '';
@@ -131,4 +145,17 @@ export function FillFormPage() {
       )}
     </div>
   );
+}
+
+
+/**
+ * Try to read a file as text on the client side.
+ * Works for text-based files (txt, csv). For PDFs/images returns null.
+ */
+async function readFileAsText(file: File): Promise<string | null> {
+  // Only attempt for text-like types
+  if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+    return file.text();
+  }
+  return null;
 }
