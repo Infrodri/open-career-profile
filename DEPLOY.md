@@ -2,16 +2,11 @@
 
 ## Publicar en GitHub
 
-```bash
-# 1. Crear repositorio en GitHub (desde github.com/new)
-#    Nombre: open-career-profile
-#    Visibilidad: Public
-#    NO inicializar con README (ya tenemos uno)
+Repositorio: https://github.com/Infrodri/open-career-profile
 
-# 2. Agregar remote y push
-git remote add origin https://github.com/TU_USUARIO/open-career-profile.git
-git branch -M main
-git push -u origin main
+```bash
+# Ya publicado. Para actualizar:
+git push origin main
 ```
 
 ---
@@ -100,8 +95,8 @@ Crear `apps/web/vercel.json`:
 ```json
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://ocp-api.onrender.com/api/:path*" },
-    { "source": "/health", "destination": "https://ocp-api.onrender.com/health" },
+    { "source": "/api/:path*", "destination": "https://open-career-profile-api.onrender.com/api/:path*" },
+    { "source": "/health", "destination": "https://open-career-profile-api.onrender.com/health" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

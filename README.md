@@ -148,15 +148,15 @@ OCP_OCR_LANGUAGE=eng
 
 ---
 
-## Deploy
+## Deploy (en producción)
 
-### Render (Backend API + PostgreSQL)
+| Servicio | URL |
+|----------|-----|
+| Frontend | https://open-career-profile-web.vercel.app |
+| API | https://open-career-profile-api.onrender.com |
+| Repositorio | https://github.com/Infrodri/open-career-profile |
 
-Ver [DEPLOY.md](./DEPLOY.md) para instrucciones detalladas.
-
-### Vercel (Frontend)
-
-Ver [DEPLOY.md](./DEPLOY.md) para instrucciones detalladas.
+Ver [DEPLOY.md](./DEPLOY.md) para instrucciones detalladas de configuración.
 
 ---
 
