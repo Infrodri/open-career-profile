@@ -78,17 +78,36 @@ export function DocumentCapturePage() {
         ? result.text.split('\n').filter(Boolean)[0]?.slice(0, 100) ?? file.name
         : file.name.replace(/\.[^.]+$/, '');
 
+      // Add entry to the selected section.
+      // Different sections use different field names for the headline:
+      // - formacionAcademica, postgrado: "title"
+      // - cursosEspecialidad, cursos*, certificaciones*, reconocimientos*: "name"
+      // - experiencia*: "position"
+      const usesTitle = ['formacionAcademica', 'postgrado'].includes(targetSection);
+      const usesPosition = targetSection.startsWith('experiencia');
+
+      const entryData: Record<string, unknown> = {
+        issuer: 'Ver documento adjunto',
+        issueDate: new Date().getFullYear().toString(),
+        verified: true,
+      };
+
+      if (usesTitle) {
+        entryData['title'] = name;
+        entryData['institution'] = 'Ver documento adjunto';
+      } else if (usesPosition) {
+        entryData['position'] = name;
+        entryData['institution'] = 'Ver documento adjunto';
+        entryData['startDate'] = new Date().getFullYear().toString();
+      } else {
+        entryData['name'] = name;
+      }
+
       // Add entry to the selected section
       const entryRes = await fetch(`/api/profiles/${activeProfileId}/sections/${targetSection}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          title: name,
-          issuer: 'Ver documento adjunto',
-          issueDate: new Date().getFullYear().toString(),
-          verified: true,
-        }),
+        body: JSON.stringify(entryData),
       });
 
       if (!entryRes.ok) throw new Error('No se pudo agregar la entrada');
