@@ -61,7 +61,7 @@ describe('OpenAiCompatibleAdapter', () => {
       const adapter = new OpenAiCompatibleAdapter(validConfig);
       const result = await adapter.complete('Hello');
 
-      expect(fetch).toHaveBeenCalledWith('http://localhost:11434/v1/chat/completions', {
+      expect(fetch).toHaveBeenCalledWith('http://localhost:11434/v1/chat/completions', expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -70,7 +70,7 @@ describe('OpenAiCompatibleAdapter', () => {
           max_tokens: 1000,
           temperature: 0.7,
         }),
-      });
+      }));
       expect(result).toBe('Hello back!');
     });
 
@@ -116,7 +116,7 @@ describe('OpenAiCompatibleAdapter', () => {
       expect(result).toContain('500');
     });
 
-     it('handles network/fetch errors gracefully without leaking details', async () => {
+    it('handles network/fetch errors gracefully without leaking details', async () => {
       vi.mocked(fetch).mockRejectedValue(new Error('Connection refused'));
 
       const adapter = new OpenAiCompatibleAdapter(validConfig);
@@ -125,6 +125,20 @@ describe('OpenAiCompatibleAdapter', () => {
       expect(result).toContain('[AI error]');
       // The raw message must never reach the caller: it can embed the URL.
       expect(result).not.toContain('Connection refused');
+    });
+
+    it('classifies a wrapped cause when fetch reports a generic failure', async () => {
+      // Node wraps network errors: message is "fetch failed", cause holds the code.
+      const wrapped = new TypeError('fetch failed');
+      (wrapped as { cause?: unknown }).cause = Object.assign(new Error('getaddrinfo ENOTFOUND'), {
+        code: 'ENOTFOUND',
+      });
+      vi.mocked(fetch).mockRejectedValue(wrapped);
+
+      const adapter = new OpenAiCompatibleAdapter(validConfig);
+      const result = await adapter.complete('Hello');
+
+      expect(result).toContain('OCP_AI_BASE_URL');
     });
 
     it('never echoes the base URL when it is misconfigured', async () => {
@@ -195,6 +209,28 @@ describe('getAiConfig', () => {
     expect(config.model).toBe('gpt-4o-mini');
     expect(config.maxTokens).toBe(2000);
     expect(config.temperature).toBe(0.5);
+  });
+
+  it('trims whitespace from values pasted into hosting dashboards', () => {
+    vi.stubEnv('OCP_AI_BASE_URL', '  https://openrouter.ai/api/v1\n');
+    vi.stubEnv('OCP_AI_MODEL', ' openai/gpt-4o-mini ');
+
+    const config = getAiConfig();
+
+    expect(config.baseUrl).toBe('https://openrouter.ai/api/v1');
+    expect(config.model).toBe('openai/gpt-4o-mini');
+  });
+
+  it('strips a trailing slash from the base URL', () => {
+    vi.stubEnv('OCP_AI_BASE_URL', 'https://openrouter.ai/api/v1/');
+
+    expect(getAiConfig().baseUrl).toBe('https://openrouter.ai/api/v1');
+  });
+
+  it('treats a blank value as absent and applies the default', () => {
+    vi.stubEnv('OCP_AI_MODEL', '   ');
+
+    expect(getAiConfig().model).toBe('llama3');
   });
 
   it('uses defaults for invalid numeric values', () => {

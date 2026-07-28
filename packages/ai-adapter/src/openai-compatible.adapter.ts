@@ -74,6 +74,8 @@ export class OpenAiCompatibleAdapter implements AiProvider {
 
       return { ok: true, model: this.config.model };
     } catch (error: unknown) {
+      // Full detail goes to the server log only; the response stays sanitized.
+      console.error('[AI checkConnection] failed:', error);
       return { ok: false, model: this.config.model, error: this.safeErrorMessage(error) };
     }
   }
@@ -117,6 +119,7 @@ export class OpenAiCompatibleAdapter implements AiProvider {
       if (error instanceof Error && error.name === 'AbortError') {
         return '[AI error] La IA tardó demasiado en responder (timeout 60s).';
       }
+      console.error('[AI complete] failed:', error);
       return `[AI error] ${this.safeErrorMessage(error)}`;
     } finally {
       clearTimeout(timeout);
@@ -125,30 +128,52 @@ export class OpenAiCompatibleAdapter implements AiProvider {
 
   /**
    * Map an unknown error to a message that is safe to return to a caller.
-   * The raw message is never included: fetch() embeds the target URL in
-   * several failure modes, and that URL may hold a misconfigured secret.
+   *
+   * Node's fetch reports network failures as "fetch failed" and puts the real
+   * reason in error.cause, so the chain is walked to classify it. Only error
+   * codes reach the caller: raw messages can embed the target URL, which may
+   * hold a misconfigured secret.
    */
   private safeErrorMessage(error: unknown): string {
-    const raw = error instanceof Error ? error.message : '';
+    const codes = new Set<string>();
+    const messages: string[] = [];
 
-    if (raw.includes('Failed to parse URL') || raw.includes('Invalid URL')) {
+    let current: unknown = error;
+    for (let depth = 0; depth < 5 && current instanceof Error; depth++) {
+      messages.push(current.message);
+      const code = (current as { code?: unknown }).code;
+      if (typeof code === 'string') codes.add(code);
+      current = (current as { cause?: unknown }).cause;
+    }
+
+    const text = messages.join(' | ');
+    const has = (code: string) => codes.has(code) || text.includes(code);
+
+    if (text.includes('Failed to parse URL') || text.includes('Invalid URL')) {
       return 'La URL del proveedor de IA no es válida. Revisa OCP_AI_BASE_URL.';
     }
-    if (
-      raw.includes('ENOTFOUND') ||
-      raw.includes('EAI_AGAIN') ||
-      raw.includes('getaddrinfo')
-    ) {
+    if (has('ENOTFOUND') || has('EAI_AGAIN') || text.includes('getaddrinfo')) {
       return 'No se pudo resolver el host del proveedor de IA. Revisa OCP_AI_BASE_URL.';
     }
-    if (raw.includes('ECONNREFUSED')) {
+    if (has('ECONNREFUSED')) {
       return 'El proveedor de IA rechazó la conexión.';
     }
-    if (raw.includes('certificate') || raw.includes('CERT_')) {
+    if (has('ETIMEDOUT') || has('UND_ERR_CONNECT_TIMEOUT')) {
+      return 'Tiempo de espera agotado al conectar con el proveedor de IA.';
+    }
+    if (
+      has('DEPTH_ZERO_SELF_SIGNED_CERT') ||
+      text.includes('certificate') ||
+      text.includes('CERT_')
+    ) {
       return 'Error de certificado TLS al conectar con el proveedor de IA.';
     }
 
-    return 'No se pudo conectar con el proveedor de IA.';
+    // Error codes are safe to surface and make remote diagnosis possible.
+    const codeList = [...codes].join(', ');
+    return codeList !== ''
+      ? `No se pudo conectar con el proveedor de IA (${codeList}).`
+      : 'No se pudo conectar con el proveedor de IA.';
   }
 
   private buildHeaders(): Record<string, string> {

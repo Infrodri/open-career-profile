@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { type AiProvider } from '@ocp/ai-adapter';
+import { type AiProvider, getAiConfig } from '@ocp/ai-adapter';
 import { success, failure } from '../middleware/error-handler.js';
 import { analyzeDocumentMultiPass } from '../services/ai-analyze.service.js';
 
@@ -48,20 +48,40 @@ export function createAiRoutes(aiProvider: AiProvider): Router {
   // GET /api/ai/status — Check if AI provider is connected and working
   router.get('/status', async (_req: Request, res: Response) => {
     try {
+      const config = getAiConfig();
+
+      // Report which piece of configuration is missing. Values are never
+      // included, only whether each one is present and well formed.
       if (!aiProvider.isAvailable()) {
-        res.json(success({ connected: false, model: '', error: 'IA no configurada' }));
+        const missing: string[] = [];
+        if (!config.baseUrl.startsWith('http')) missing.push('OCP_AI_BASE_URL');
+        if (config.model === '') missing.push('OCP_AI_MODEL');
+        if (config.apiKey === '') missing.push('OCP_AI_API_KEY');
+
+        res.json(
+          success({
+            connected: false,
+            model: config.model,
+            error:
+              missing.length > 0
+                ? `IA no configurada: revisa ${missing.join(', ')}`
+                : 'IA no configurada',
+          }),
+        );
         return;
       }
 
       const check = await (aiProvider as any).checkConnection?.();
       if (check) {
-        res.json(success({
-          connected: check.ok,
-          model: check.model,
-          error: check.error ?? null,
-        }));
+        res.json(
+          success({
+            connected: check.ok,
+            model: check.model,
+            error: check.error ?? null,
+          }),
+        );
       } else {
-        res.json(success({ connected: true, model: 'unknown', error: null }));
+        res.json(success({ connected: true, model: config.model, error: null }));
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error checking AI status';
