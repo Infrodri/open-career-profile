@@ -58,11 +58,10 @@ export function TemplatesPage() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Plantillas Institucionales
+            Formatos y Plantillas
           </h1>
           <p className="mt-1 text-slate-500 dark:text-slate-400">
-            Sube el formato de cada institución. Al generar tu CV, seleccionarás la plantilla y el
-            sistema ajustará tu perfil a ese formato.
+            Gestiona los formatos institucionales que definen qué información incluir en tu CV.
           </p>
         </div>
         <button
@@ -73,6 +72,19 @@ export function TemplatesPage() {
           Nueva plantilla
         </button>
       </header>
+
+      {/* Navigation tabs */}
+      <div className="flex gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
+        <a href="/plantillas" className="px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400">
+          Reglas institucionales
+        </a>
+        <a href="/diseno" className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+          Diseño visual (Handlebars)
+        </a>
+        <a href="/importar-formato" className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+          Importar formato con IA
+        </a>
+      </div>
 
       {showForm && (
         <CreateTemplateForm

@@ -82,6 +82,7 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Plantilla de diseño
+            <span className="text-slate-400 font-normal ml-1">(cómo se ve el CV)</span>
           </label>
           <select
             value={templateId}
@@ -98,7 +99,7 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
         <div>
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
             Formato institucional
-            <span className="text-slate-400 font-normal ml-1">(opcional)</span>
+            <span className="text-slate-400 font-normal ml-1">(qué secciones incluir — opcional)</span>
           </label>
           <select
             value={ruleSetId}
@@ -113,7 +114,7 @@ export function OutputGenerator({ profileId }: OutputGeneratorProps) {
             ))}
           </select>
           <p className="text-xs text-slate-400 mt-1">
-            Si seleccionas un formato, se aplicarán sus reglas al generar el documento.
+            La plantilla de diseño define la apariencia visual. El formato institucional define qué información incluir.
           </p>
         </div>
 
