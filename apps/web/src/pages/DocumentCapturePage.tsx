@@ -73,34 +73,43 @@ export function DocumentCapturePage() {
         throw new Error('Necesitas crear un perfil antes de agregar certificados individuales.');
       }
 
-      // Extract a simple name from the filename or text
-      const name = result.hasText
-        ? result.text.split('\n').filter(Boolean)[0]?.slice(0, 100) ?? file.name
-        : file.name.replace(/\.[^.]+$/, '');
+      // Extract structured data from the OCR text
+      const lines = result.hasText
+        ? result.text.split('\n').map((l: string) => l.trim()).filter(Boolean)
+        : [];
 
-      // Add entry to the selected section.
-      // Different sections use different field names for the headline:
-      // - formacionAcademica, postgrado: "title"
-      // - cursosEspecialidad, cursos*, certificaciones*, reconocimientos*: "name"
-      // - experiencia*: "position"
+      // Parse meaningful fields from the extracted text
+      const parsed = parseCertificateText(lines, file.name);
+
+      // Build entry data with correct field names for the target section
       const usesTitle = ['formacionAcademica', 'postgrado'].includes(targetSection);
       const usesPosition = targetSection.startsWith('experiencia');
 
       const entryData: Record<string, unknown> = {
-        issuer: 'Ver documento adjunto',
-        issueDate: new Date().getFullYear().toString(),
         verified: true,
       };
 
       if (usesTitle) {
-        entryData['title'] = name;
-        entryData['institution'] = 'Ver documento adjunto';
+        entryData['title'] = parsed.name;
+        entryData['institution'] = parsed.issuer;
+        entryData['startDate'] = parsed.date;
+        entryData['endDate'] = parsed.date;
+        entryData['detalle'] = parsed.detail;
       } else if (usesPosition) {
-        entryData['position'] = name;
-        entryData['institution'] = 'Ver documento adjunto';
-        entryData['startDate'] = new Date().getFullYear().toString();
+        entryData['position'] = parsed.name;
+        entryData['institution'] = parsed.issuer;
+        entryData['startDate'] = parsed.date;
+        entryData['description'] = parsed.detail;
       } else {
-        entryData['name'] = name;
+        entryData['name'] = parsed.name;
+        entryData['issuer'] = parsed.issuer;
+        entryData['issueDate'] = parsed.date;
+        if (parsed.contenido.length > 0) {
+          entryData['contenido'] = parsed.contenido;
+        }
+        if (parsed.detail) {
+          entryData['detalle'] = parsed.detail;
+        }
       }
 
       // Add entry to the selected section
@@ -412,4 +421,100 @@ export function DocumentCapturePage() {
       )}
     </div>
   );
+}
+
+// =============================================================================
+// Certificate text parser — extracts structured fields from OCR output
+// =============================================================================
+
+interface ParsedCertificate {
+  name: string;
+  issuer: string;
+  date: string;
+  detail: string;
+  contenido: string[];
+}
+
+/**
+ * Parse OCR text lines from a certificate into structured fields.
+ *
+ * Heuristics:
+ * - Lines with "certifica" or the course title are usually near the top
+ * - Lines mentioning institutions/companies are the issuer
+ * - Lines with years (4 digits) or date patterns are dates
+ * - Remaining descriptive lines become the detail/contenido
+ */
+function parseCertificateText(lines: string[], fileName: string): ParsedCertificate {
+  if (lines.length === 0) {
+    return {
+      name: fileName.replace(/\.[^.]+$/, ''),
+      issuer: '',
+      date: new Date().getFullYear().toString(),
+      detail: '',
+      contenido: [],
+    };
+  }
+
+  // Common words to skip (headers, footers, names of the certificate holder)
+  const skipPatterns = /^(certifica\s+a|otorgado\s+a|se\s+certifica|certificado|diploma)/i;
+  const datePattern = /(\d{1,2}\s+de\s+\w+\s+de\s+\d{4}|\d{4}[-/]\d{2}[-/]\d{2}|\b(19|20)\d{2}\b)/;
+  const issuerKeywords = /CEO|Director|Rector|Decano|Institución|Universidad|Academia|Fundación|Plataforma/i;
+
+  let name = '';
+  let issuer = '';
+  let date = '';
+  const details: string[] = [];
+
+  for (const line of lines) {
+    // Skip very short lines
+    if (line.length < 3) continue;
+
+    // Skip "Certifica a [nombre]" lines
+    if (skipPatterns.test(line)) continue;
+
+    // Detect date
+    const dateMatch = line.match(datePattern);
+    if (dateMatch && !date) {
+      // Extract the year
+      const yearMatch = line.match(/\b(19|20)\d{2}\b/);
+      date = yearMatch ? yearMatch[0] : (dateMatch[1] ?? '');
+      // If the line is ONLY a date, skip adding it elsewhere
+      if (line.replace(datePattern, '').trim().length < 5) continue;
+    }
+
+    // Detect issuer (lines mentioning organizational roles or keywords)
+    if (issuerKeywords.test(line) && !issuer) {
+      // The issuer might be the org name, extract it
+      const parts = line.split(/CEO de|Director de|de la|de/i);
+      issuer = (parts[parts.length - 1] ?? line).trim();
+      continue;
+    }
+
+    // First substantial line (>10 chars, not a date) is likely the course name
+    if (!name && line.length > 10 && !dateMatch) {
+      name = line.slice(0, 120);
+      continue;
+    }
+
+    // Everything else is detail/contenido
+    if (line.length > 5) {
+      details.push(line);
+    }
+  }
+
+  // Fallbacks
+  if (!name) name = fileName.replace(/\.[^.]+$/, '');
+  if (!date) date = new Date().getFullYear().toString();
+  if (!issuer && details.length > 0) {
+    // Use the last detail line as issuer (often the signing institution)
+    issuer = details.pop() ?? '';
+  }
+
+  return {
+    name,
+    issuer,
+    date,
+    detail: details.join('. ').slice(0, 500),
+    contenido: details.slice(0, 10),
+  };
 }
