@@ -8,13 +8,16 @@ import {
   deleteDocument,
   documentFileUrl,
   importProfile,
+  linkEvidence,
   uploadDocument,
   type ExtractionResult,
   type ProfileAnalysis,
 } from '../api/document.api';
 import { getActiveProfileId, setActiveProfileId } from '../lib/active-profile';
+import { SECTION_KEYS, SECTION_LABELS, type SectionKey } from '../types/profile';
 
 type Step = 'upload' | 'processing' | 'review' | 'success' | 'error';
+type UploadMode = 'full' | 'single';
 
 export function DocumentCapturePage() {
   const navigate = useNavigate();
@@ -24,6 +27,8 @@ export function DocumentCapturePage() {
   const [upload, setUpload] = useState<ExtractionResult | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [savedProfileId, setSavedProfileId] = useState('');
+  const [uploadMode, setUploadMode] = useState<UploadMode>('full');
+  const [targetSection, setTargetSection] = useState<SectionKey>('cursosEspecialidad');
 
   const activeProfileId = getActiveProfileId();
 
@@ -48,6 +53,61 @@ export function DocumentCapturePage() {
       setStep('review');
       // The document is already listed under "Mis Documentos".
       void queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+    onError: (err: Error) => {
+      setErrorMessage(err.message);
+      setStep('error');
+      void queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+
+  // Single certificate mode: upload, add to the selected section, link as evidence
+  const singleCertMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const result = await uploadDocument(file, {
+        ...(activeProfileId ? { profileId: activeProfileId } : {}),
+      });
+      setUpload(result);
+
+      if (!activeProfileId) {
+        throw new Error('Necesitas crear un perfil antes de agregar certificados individuales.');
+      }
+
+      // Extract a simple name from the filename or text
+      const name = result.hasText
+        ? result.text.split('\n').filter(Boolean)[0]?.slice(0, 100) ?? file.name
+        : file.name.replace(/\.[^.]+$/, '');
+
+      // Add entry to the selected section
+      const entryRes = await fetch(`/api/profiles/${activeProfileId}/sections/${targetSection}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          title: name,
+          issuer: 'Ver documento adjunto',
+          issueDate: new Date().getFullYear().toString(),
+          verified: true,
+        }),
+      });
+
+      if (!entryRes.ok) throw new Error('No se pudo agregar la entrada');
+      const entryJson = await entryRes.json();
+      const entryId = entryJson.data?.id;
+
+      // Link the document as evidence
+      if (entryId) {
+        await linkEvidence(result.documentId, [{ sectionType: targetSection, entryId }]);
+      }
+
+      return result;
+    },
+    onSuccess: () => {
+      setSavedProfileId(activeProfileId!);
+      setStep('success');
+      void queryClient.invalidateQueries({ queryKey: ['profile'] });
+      void queryClient.invalidateQueries({ queryKey: ['documents'] });
+      void queryClient.invalidateQueries({ queryKey: ['evidence'] });
     },
     onError: (err: Error) => {
       setErrorMessage(err.message);
@@ -131,13 +191,66 @@ export function DocumentCapturePage() {
       </header>
 
       {step === 'upload' && (
-        <DocumentUploader
-          onFileSelected={(f) => {
-            setStep('processing');
-            processMutation.mutate(f);
-          }}
-          isProcessing={false}
-        />
+        <div className="space-y-4">
+          {/* Mode selector */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setUploadMode('full')}
+              className={`flex-1 p-3 rounded-lg border text-left transition-colors ${
+                uploadMode === 'full'
+                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'
+              }`}
+            >
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Hoja de Vida completa</p>
+              <p className="text-xs text-slate-500 mt-0.5">La IA analiza todas las secciones automáticamente</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode('single')}
+              className={`flex-1 p-3 rounded-lg border text-left transition-colors ${
+                uploadMode === 'single'
+                  ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-600'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-blue-300'
+              }`}
+            >
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Certificado individual</p>
+              <p className="text-xs text-slate-500 mt-0.5">Eliges la categoría manualmente (sin IA)</p>
+            </button>
+          </div>
+
+          {/* Category selector for single certificate */}
+          {uploadMode === 'single' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                ¿A qué sección pertenece?
+              </label>
+              <select
+                value={targetSection}
+                onChange={(e) => setTargetSection(e.target.value as SectionKey)}
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              >
+                {SECTION_KEYS.map((key) => (
+                  <option key={key} value={key}>{SECTION_LABELS[key]}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <DocumentUploader
+            onFileSelected={(f) => {
+              if (uploadMode === 'single') {
+                setStep('processing');
+                singleCertMutation.mutate(f);
+              } else {
+                setStep('processing');
+                processMutation.mutate(f);
+              }
+            }}
+            isProcessing={false}
+          />
+        </div>
       )}
 
       {step === 'processing' && (

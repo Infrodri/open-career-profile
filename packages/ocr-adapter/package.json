@@ -21,7 +21,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "tesseract.js": "5.1.1"
+    "tesseract.js": "5.1.1",
+    "sharp": "0.33.5"
   },
   "devDependencies": {
     "vitest": "3.1.4",
