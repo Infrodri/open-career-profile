@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { type DocumentRepository, type DocumentStorage, type ProfileRepository } from '@ocp/core';
-import { OutputEngine, PuppeteerAdapter } from '@ocp/output-engine';
+import { OutputEngine, PdfKitAdapter } from '@ocp/output-engine';
 import { InstitutionalRulesEngine } from '@ocp/rules-engine';
 import { Scanner, ComputrabajoBoProvider, LinkedInPublicProvider, TrabajopolisBoProvider, RemoteOkProvider, GoogleJobsProvider } from '@ocp/job-scanner';
 import { TesseractAdapter, getOcrConfig } from '@ocp/ocr-adapter';
@@ -46,7 +46,7 @@ export function createApp({
   // Services
   const profileService = new ProfileService(profileRepository);
   const documentService = new DocumentService(documentRepository, documentStorage);
-  const pdfRenderer = new PuppeteerAdapter();
+  const pdfRenderer = new PdfKitAdapter();
   const outputEngine = new OutputEngine(pdfRenderer);
   const rulesEngine = new InstitutionalRulesEngine();
   const ruleSetResolver = new RuleSetResolver(prisma);

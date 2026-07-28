@@ -23,11 +23,13 @@
   "dependencies": {
     "@ocp/core": "*",
     "handlebars": "4.7.8",
+    "pdfkit": "^0.19.1",
     "puppeteer": "24.9.0"
   },
   "devDependencies": {
     "@types/node": "22.15.17",
-    "vitest": "3.1.4",
-    "typescript": "5.8.3"
+    "@types/pdfkit": "^0.17.6",
+    "typescript": "5.8.3",
+    "vitest": "3.1.4"
   }
 }
