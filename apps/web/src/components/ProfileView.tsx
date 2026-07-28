@@ -241,6 +241,38 @@ function UnverifiedIcon() {
 // Profile Photo Component
 // =============================================================================
 
+/**
+ * Compress and resize an image file to a small base64 JPEG.
+ * Uses an offscreen canvas to resize and re-encode.
+ */
+function compressImage(file: File, maxW: number, maxH: number, quality: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate dimensions maintaining aspect ratio
+      let w = img.width;
+      let h = img.height;
+      if (w > maxW || h > maxH) {
+        const ratio = Math.min(maxW / w, maxH / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas not supported')); return; }
+
+      ctx.drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', quality);
+      resolve(base64);
+    };
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 function ProfilePhoto({
   photo,
   profileId,
@@ -256,24 +288,22 @@ function ProfilePhoto({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const base64 = ev.target?.result as string;
-      try {
-        const res = await fetch(`/api/profiles/${profileId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ personalInfo: { photo: base64 } }),
-        });
-        if (res.ok) {
-          void queryClient.invalidateQueries({ queryKey: ['profile'] });
-        }
-      } catch {
-        // silently fail
+    // Compress and resize the image to avoid payload too large errors.
+    // Target: max 200x250px, JPEG quality 80%, resulting in ~15-30KB base64.
+    const base64 = await compressImage(file, 200, 250, 0.8);
+
+    try {
+      const res = await fetch(`/api/profiles/${profileId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personalInfo: { photo: base64 } }),
+      });
+      if (res.ok) {
+        void queryClient.invalidateQueries({ queryKey: ['profile'] });
       }
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      // silently fail
+    }
   };
 
   return (
