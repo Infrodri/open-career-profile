@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import type {
   Evidence,
   ProfessionalProfile,
@@ -56,9 +57,17 @@ export function ProfileView({ profile, evidence = [] }: ProfileViewProps) {
     <div className="space-y-6 max-w-4xl mx-auto px-6 py-8">
       {/* Personal Info */}
       <section className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          {personalInfo.fullName}
-        </h2>
+        <div className="flex items-start gap-4">
+          {/* Photo */}
+          <ProfilePhoto
+            photo={personalInfo.photo}
+            profileId={profile.id}
+            fullName={personalInfo.fullName}
+          />
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {personalInfo.fullName}
+            </h2>
         {personalInfo.profesiones.length > 0 && (
           <div className="mt-1 flex flex-wrap gap-2">
             {personalInfo.profesiones.map((p, i) => (
@@ -102,6 +111,8 @@ export function ProfileView({ profile, evidence = [] }: ProfileViewProps) {
             </span>
           </div>
         )}
+          </div>
+        </div>
       </section>
 
       {/* Render each section that has entries */}
@@ -225,3 +236,77 @@ function UnverifiedIcon() {
 }
 
 // EvidenceClips is no longer needed — VerifyEntryButton handles both states.
+
+// =============================================================================
+// Profile Photo Component
+// =============================================================================
+
+function ProfilePhoto({
+  photo,
+  profileId,
+  fullName,
+}: {
+  photo?: string;
+  profileId: string;
+  fullName: string;
+}) {
+  const queryClient = useQueryClient();
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      try {
+        const res = await fetch(`/api/profiles/${profileId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ personalInfo: { photo: base64 } }),
+        });
+        if (res.ok) {
+          void queryClient.invalidateQueries({ queryKey: ['profile'] });
+        }
+      } catch {
+        // silently fail
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="shrink-0">
+      <label className="cursor-pointer block relative group" title="Cambiar foto de perfil">
+        {photo ? (
+          <img
+            src={photo}
+            alt={fullName}
+            className="w-20 h-24 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-600"
+          />
+        ) : (
+          <div className="w-20 h-24 bg-slate-100 dark:bg-slate-700 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center">
+            <svg className="w-8 h-8 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+            </svg>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/40 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <svg className="w-5 h-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 5a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" />
+          </svg>
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoUpload}
+          className="hidden"
+        />
+      </label>
+      <p className="text-[9px] text-slate-400 text-center mt-1">
+        {photo ? 'Cambiar' : 'Subir foto'}
+      </p>
+    </div>
+  );
+}

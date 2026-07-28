@@ -59,13 +59,18 @@ NO INCLUYE: memorandos de felicitación internos (esos van en reconocimientosLab
 Si dice "por haber obtenido un nivel de COMPETENCIA" o "evento de capacitación" o "91 puntos", ES un curso.
 JSON: [{"name":"nombre del curso/capacitación","issuer":"institución que lo dictó","issueDate":"AAAA","detalle":"descripción"}]`,
 
-  cursosProgramacion: `Extrae SOLO cursos de programación, herramientas de desarrollo (VS Code, Power BI, SIGEP, etc).
+  cursosProgramacion: `Extrae SOLO cursos de programación, herramientas de desarrollo (VS Code, Power BI, SIGEP, etc), bootcamps de desarrollo de software, cursos de código.
+INCLUYE: bootcamps, cursos de programación, desarrollo web, desarrollo de software, bases de datos, DevOps, IA/ML si son cursos técnicos.
+Si no encaja en una categoría más específica (ciberseguridad, sistemas institucionales, administrativo), va aquí.
 JSON: [{"name":"","issuer":"","issueDate":"AAAA","contenido":[]}]`,
 
-  cursosEspecialidad: `Extrae SOLO cursos/certificaciones largas de especialidad (Cisco CCNA, Código Facilito, certificaciones con múltiples módulos).
+  cursosEspecialidad: `Extrae SOLO cursos/certificaciones largas de especialidad (Cisco CCNA, Código Facilito, certificaciones con múltiples módulos, bootcamps intensivos de más de 1 semana).
+INCLUYE: bootcamps, certificaciones largas, programas de formación intensiva, cursos con varios módulos.
+Si dice "programa de X semanas", "formación intensiva", "bootcamp", va aquí.
 JSON: [{"name":"","issuer":"","issueDate":"AAAA","contenido":["modulo1","modulo2"]}]`,
 
-  cursosGenerales: `Extrae SOLO asistencia a congresos, conferencias, foros, jornadas, talleres educativos generales.
+  cursosGenerales: `Extrae cursos, congresos, conferencias, foros, jornadas, talleres educativos generales, y CUALQUIER certificado que no encaje claramente en las categorías anteriores.
+REGLA DE FALLBACK: Si un certificado no es claramente de ciberseguridad, sistemas institucionales, administrativo, programación ni especialidad, INCLÚYELO AQUÍ. Es mejor incluirlo aquí que descartarlo.
 JSON: [{"name":"","issuer":"","issueDate":"AAAA","detalle":""}]`,
 
   reconocimientosExpositor: `Extrae SOLO reconocimientos como expositor, ponente o experto.
