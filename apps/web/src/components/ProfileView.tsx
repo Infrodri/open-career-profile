@@ -289,14 +289,21 @@ function ProfilePhoto({
     if (!file) return;
 
     // Compress and resize the image to avoid payload too large errors.
-    // Target: max 200x250px, JPEG quality 80%, resulting in ~15-30KB base64.
     const base64 = await compressImage(file, 200, 250, 0.8);
 
     try {
+      // Fetch current profile to merge photo into existing personalInfo
+      const getRes = await fetch(`/api/profiles/${profileId}`);
+      if (!getRes.ok) return;
+      const getJson = await getRes.json();
+      const currentPersonalInfo = getJson.data?.personalInfo ?? {};
+
       const res = await fetch(`/api/profiles/${profileId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personalInfo: { photo: base64 } }),
+        body: JSON.stringify({
+          personalInfo: { ...currentPersonalInfo, photo: base64 },
+        }),
       });
       if (res.ok) {
         void queryClient.invalidateQueries({ queryKey: ['profile'] });
