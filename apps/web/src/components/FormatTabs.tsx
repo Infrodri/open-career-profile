@@ -2,8 +2,9 @@ import { Link, useLocation } from 'react-router-dom';
 
 const TABS = [
   { path: '/plantillas', label: 'Reglas institucionales' },
-  { path: '/diseno', label: 'Diseño visual (Handlebars)' },
-  { path: '/importar-formato', label: 'Importar formato con IA' },
+  { path: '/diseno', label: 'Diseño visual' },
+  { path: '/importar-formato', label: 'Importar formato' },
+  { path: '/llenar-formulario', label: 'Llenar formulario' },
 ] as const;
 
 /**

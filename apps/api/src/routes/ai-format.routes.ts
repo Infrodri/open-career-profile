@@ -165,6 +165,51 @@ export function createAiFormatRoutes(
     }
   });
 
+  // POST /api/ai/fill-form — Fill an institutional form with profile data
+  const fillFormSchema = z.object({
+    profileId: z.string().min(1),
+    formText: z.string().min(10),
+  });
+
+  router.post('/fill-form', validate(fillFormSchema), async (req: Request, res: Response) => {
+    try {
+      const { profileId, formText } = req.body;
+
+      const profile = await profileService.findById(profileId);
+      if (!profile) {
+        res.status(404).json(failure('NOT_FOUND', 'Perfil no encontrado'));
+        return;
+      }
+
+      if (!aiProvider.isAvailable()) {
+        res.json(success({
+          filledForm: '',
+          notes: 'La IA no está disponible. No se puede llenar el formulario automáticamente.',
+        }));
+        return;
+      }
+
+      const prompt = buildFillFormPrompt(formText, profile);
+      const raw = await aiProvider.complete(prompt);
+
+      if (raw.startsWith('[AI')) {
+        res.json(success({
+          filledForm: '',
+          notes: 'La IA no pudo procesar el formulario. Inténtalo de nuevo.',
+        }));
+        return;
+      }
+
+      res.json(success({
+        filledForm: raw,
+        notes: 'Formulario llenado con los datos de tu perfil. Revisa antes de usar.',
+      }));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al llenar el formulario';
+      res.status(500).json(failure('FILL_FORM_ERROR', msg));
+    }
+  });
+
   return router;
 }
 
@@ -387,4 +432,92 @@ function extractHtmlFromResponse(raw: string): string {
   }
 
   return '';
+}
+
+/**
+ * Build a prompt that asks the AI to fill a form/formulario with profile data.
+ * The AI receives the complete form structure and ALL profile data, then fills
+ * each field with the corresponding information.
+ */
+function buildFillFormPrompt(formText: string, profile: ProfessionalProfile): string {
+  const pi = profile.personalInfo;
+  const sections = profile.sections;
+
+  // Build a complete representation of the profile for the AI
+  const profileData: string[] = [];
+
+  profileData.push('=== DATOS PERSONALES ===');
+  profileData.push(`Nombre completo: ${pi.fullName}`);
+  if (pi.profesiones.length > 0) profileData.push(`Profesiones: ${pi.profesiones.join(', ')}`);
+  if (pi.email) profileData.push(`Email: ${pi.email}`);
+  if (pi.phone) profileData.push(`Teléfono: ${pi.phone}`);
+  if (pi.city) profileData.push(`Ciudad: ${pi.city}`);
+  if (pi.country) profileData.push(`País: ${pi.country}`);
+  if (pi.nacionalidad) profileData.push(`Nacionalidad: ${pi.nacionalidad}`);
+  if (pi.birthDate) profileData.push(`Fecha de nacimiento: ${pi.birthDate}`);
+  if (pi.identityDocument) profileData.push(`CI: ${pi.identityDocument}`);
+  if (pi.estadoCivil) profileData.push(`Estado civil: ${pi.estadoCivil}`);
+  if (pi.sexo) profileData.push(`Sexo: ${pi.sexo}`);
+  if (pi.libretaMilitar) profileData.push(`Libreta militar: ${pi.libretaMilitar}`);
+
+  // Add all section entries
+  for (const key of PROFILE_SECTION_KEYS) {
+    const entries = sections[key];
+    if (entries.length === 0) continue;
+
+    profileData.push(`\n=== ${key.toUpperCase()} (${entries.length} entradas) ===`);
+    for (const entry of entries) {
+      const e = entry as unknown as Record<string, unknown>;
+      const parts: string[] = [];
+
+      if (e['title']) parts.push(`Título: ${e['title']}`);
+      if (e['name']) parts.push(`Nombre: ${e['name']}`);
+      if (e['position']) parts.push(`Cargo: ${e['position']}`);
+      if (e['institution']) parts.push(`Institución: ${e['institution']}`);
+      if (e['issuer']) parts.push(`Emisor: ${e['issuer']}`);
+      if (e['startDate']) parts.push(`Desde: ${e['startDate']}`);
+      if (e['endDate']) parts.push(`Hasta: ${e['endDate']}`);
+      if (e['issueDate']) parts.push(`Fecha: ${e['issueDate']}`);
+      if (e['description']) parts.push(`Descripción: ${e['description']}`);
+      if (e['detalle']) parts.push(`Detalle: ${e['detalle']}`);
+      if (e['location']) parts.push(`Ubicación: ${e['location']}`);
+      if (e['level']) parts.push(`Nivel: ${e['level']}`);
+      if (e['category']) parts.push(`Categoría: ${e['category']}`);
+      if (e['tipo']) parts.push(`Tipo: ${e['tipo']}`);
+      if (Array.isArray(e['contenido']) && (e['contenido'] as string[]).length > 0) {
+        parts.push(`Contenido: ${(e['contenido'] as string[]).join(', ')}`);
+      }
+      if (Array.isArray(e['proyectos']) && (e['proyectos'] as string[]).length > 0) {
+        parts.push(`Proyectos: ${(e['proyectos'] as string[]).join(', ')}`);
+      }
+
+      profileData.push(`  - ${parts.join(' | ')}`);
+    }
+  }
+
+  return `Eres un experto en llenar formularios de postulación laboral. Te doy un formulario institucional vacío y los datos completos de un profesional. Tu trabajo es LLENAR cada campo del formulario con la información correspondiente del perfil.
+
+FORMULARIO A LLENAR:
+---
+${formText.slice(0, 8000)}
+---
+
+DATOS DEL PROFESIONAL:
+---
+${profileData.join('\n')}
+---
+
+INSTRUCCIONES:
+1. Llena CADA campo del formulario con los datos correspondientes del perfil.
+2. Si un campo no tiene dato disponible, escribe "N/A" o déjalo vacío.
+3. Respeta el formato del formulario (tablas, columnas, orden).
+4. Para experiencia laboral, ordena de más reciente a más antiguo.
+5. Para formación académica, incluye nivel, institución, programa y año.
+6. Si el formulario pide "Desde/Hasta" usa las fechas disponibles.
+7. Si pide "Cargo Entrada / Cargo Salida" usa el mismo cargo si solo tienes uno.
+8. NUNCA inventes datos que no estén en el perfil.
+9. Formatea la respuesta como texto plano estructurado que se pueda copiar/pegar.
+10. Usa el mismo idioma del formulario (español).
+
+Responde con el formulario COMPLETO llenado con los datos del profesional. Mantén la estructura exacta del formulario original pero con los campos completados.`;
 }

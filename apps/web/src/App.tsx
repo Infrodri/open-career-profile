@@ -10,6 +10,7 @@ import { GeneratePage } from './pages/GeneratePage';
 import { TemplatesPage } from './pages/TemplatesPage';
 import { DesignTemplatesPage } from './pages/DesignTemplatesPage';
 import { FormatImportPage } from './pages/FormatImportPage';
+import { FillFormPage } from './pages/FillFormPage';
 import { JobSearchPage } from './pages/JobSearchPage';
 
 export function App() {
@@ -26,6 +27,7 @@ export function App() {
         <Route path="/plantillas" element={<TemplatesPage />} />
         <Route path="/diseno" element={<DesignTemplatesPage />} />
         <Route path="/importar-formato" element={<FormatImportPage />} />
+        <Route path="/llenar-formulario" element={<FillFormPage />} />
         <Route path="/generar" element={<GeneratePage />} />
         <Route path="/empleo" element={<JobSearchPage />} />
         {/* Anything else goes home instead of rendering a blank page. */}
