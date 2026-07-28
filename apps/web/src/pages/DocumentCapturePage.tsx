@@ -5,6 +5,7 @@ import { DocumentUploader } from '../components/DocumentUploader';
 import { ExtractedProfileReview } from '../components/ExtractedProfileReview';
 import {
   analyzeDocumentText,
+  deleteDocument,
   documentFileUrl,
   importProfile,
   uploadDocument,
@@ -90,6 +91,27 @@ export function DocumentCapturePage() {
     setErrorMessage('');
   };
 
+  /**
+   * Discard the upload and remove the stored file.
+   *
+   * The file is persisted before the AI step so it survives a failure, but
+   * discarding means the user does not want it. Leaving it behind would also
+   * block a retry, since uploading the same file again hits deduplication.
+   */
+  const discardMutation = useMutation({
+    mutationFn: async () => {
+      if (upload) {
+        await deleteDocument(upload.documentId);
+      }
+    },
+    onSettled: () => {
+      // Return to the upload step even if cleanup failed: the document can
+      // still be removed by hand from "Mis Documentos".
+      void queryClient.invalidateQueries({ queryKey: ['documents'] });
+      reset();
+    },
+  });
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
       <header className="mb-8">
@@ -152,7 +174,7 @@ export function DocumentCapturePage() {
           <ExtractedProfileReview
             analysis={analysis}
             onConfirm={(personalInfo, sections) => saveMutation.mutate({ personalInfo, sections })}
-            onDiscard={reset}
+            onDiscard={() => discardMutation.mutate()}
             isSaving={saveMutation.isPending}
           />
         </div>
@@ -237,13 +259,21 @@ export function DocumentCapturePage() {
             </details>
           )}
 
-          <div className="text-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => discardMutation.mutate()}
+              disabled={discardMutation.isPending}
+              className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {discardMutation.isPending ? 'Descartando...' : 'Descartar y subir otro'}
+            </button>
             <button
               type="button"
               onClick={reset}
-              className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+              className="px-6 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
-              Intentar de nuevo
+              Conservar archivo y volver
             </button>
           </div>
         </div>
