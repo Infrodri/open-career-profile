@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FormatTabs } from '../components/FormatTabs';
 import {
   createOutputTemplate,
   deleteOutputTemplate,
@@ -38,7 +39,7 @@ export function DesignTemplatesPage() {
       <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Plantillas de Diseño
+            Formatos y Plantillas
           </h1>
           <p className="mt-1 text-slate-500 dark:text-slate-400">
             Crea y edita plantillas de diseño con Handlebars para personalizar el layout de tu CV.
@@ -52,6 +53,8 @@ export function DesignTemplatesPage() {
           Nueva plantilla
         </button>
       </header>
+
+      <FormatTabs />
 
       {showEditor && (
         <TemplateEditor

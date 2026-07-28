@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { analyzeFormat, generateTemplate, type AnalyzeFormatResult } from '../api/ai-format.api';
 import { createOutputTemplate } from '../api/output-template.api';
 import { DocumentUploader } from '../components/DocumentUploader';
+import { FormatTabs } from '../components/FormatTabs';
 import { SECTION_LABELS, type SectionKey } from '../types/profile';
 
 export function FormatImportPage() {
@@ -81,12 +82,14 @@ export function FormatImportPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">
-          Importar Formato Institucional
+          Formatos y Plantillas
         </h1>
         <p className="mt-1 text-slate-500 dark:text-slate-400">
           Sube el formato que te pide una institución. La IA detectará los requisitos y creará las reglas automáticamente.
         </p>
       </header>
+
+      <FormatTabs />
 
       {/* Step 1: Upload */}
       {!extractedText && (

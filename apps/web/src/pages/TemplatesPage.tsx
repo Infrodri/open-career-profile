@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { unwrap, expectNoContent } from '../api/http';
 import { SECTION_KEYS, SECTION_LABELS, type SectionKey } from '../types/profile';
+import { FormatTabs } from '../components/FormatTabs';
 
 interface InstitutionalTemplate {
   id: string;
@@ -74,17 +75,7 @@ export function TemplatesPage() {
       </header>
 
       {/* Navigation tabs */}
-      <div className="flex gap-1 mb-6 border-b border-slate-200 dark:border-slate-700">
-        <a href="/plantillas" className="px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600 dark:text-blue-400">
-          Reglas institucionales
-        </a>
-        <a href="/diseno" className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-          Diseño visual (Handlebars)
-        </a>
-        <a href="/importar-formato" className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
-          Importar formato con IA
-        </a>
-      </div>
+      <FormatTabs />
 
       {showForm && (
         <CreateTemplateForm
