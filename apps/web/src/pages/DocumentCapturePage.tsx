@@ -66,6 +66,7 @@ export function DocumentCapturePage() {
     mutationFn: async (file: File) => {
       const result = await uploadDocument(file, {
         ...(activeProfileId ? { profileId: activeProfileId } : {}),
+        documentType: 'certificado',
       });
       setUpload(result);
 
