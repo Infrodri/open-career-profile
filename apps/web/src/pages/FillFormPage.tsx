@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import * as XLSX from 'xlsx';
 import { fillForm } from '../api/form-fill.api';
 import { DocumentUploader } from '../components/DocumentUploader';
 import { getActiveProfileId } from '../lib/active-profile';
@@ -21,26 +22,30 @@ export function FillFormPage() {
   const handleFileSelected = async (file: File) => {
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('document', file);
+      let text = '';
 
-      // Use extract endpoint — if it returns 409 (duplicate), fetch the text
-      // from the existing document instead of failing
-      const res = await fetch('/api/documents/extract', { method: 'POST', body: formData });
+      // Handle Excel files client-side (xlsx, xls)
+      if (file.name.match(/\.(xlsx?|csv)$/i)) {
+        text = await readExcelAsText(file);
+      } else {
+        // For PDF/images, use the server-side extract
+        const formData = new FormData();
+        formData.append('document', file);
+        const res = await fetch('/api/documents/extract', { method: 'POST', body: formData });
 
-      if (res.status === 409) {
-        // Duplicate — try to read the file directly as text on the client
-        const text = await readFileAsText(file);
-        if (text) {
-          setExtractedText(text);
-          return;
+        if (res.status === 409) {
+          // Duplicate — try text-based fallback
+          const clientText = await readFileAsText(file);
+          if (clientText) { text = clientText; }
+          else { throw new Error('Este archivo ya fue procesado. Renómbralo o usa otro.'); }
+        } else if (!res.ok) {
+          throw new Error('Error al procesar');
+        } else {
+          const json = await res.json();
+          text = json.data?.text ?? '';
         }
-        throw new Error('Este archivo ya fue subido. Intenta con otro o usa "Agregar Documento" primero.');
       }
 
-      if (!res.ok) throw new Error('Error al procesar');
-      const json = await res.json();
-      const text = json.data?.text ?? '';
       if (!text) throw new Error('No se pudo extraer texto del formulario');
       setExtractedText(text);
     } catch (err) {
@@ -68,7 +73,7 @@ export function FillFormPage() {
             Paso 1: Sube el formulario vacío
           </h2>
           <p className="text-sm text-slate-500 mb-4">
-            Acepta PDF, Word o imagen del formulario de postulación que te pidieron llenar.
+            Acepta PDF, Word, Excel (.xlsx) o imagen del formulario de postulación que te pidieron llenar.
           </p>
           <DocumentUploader onFileSelected={handleFileSelected} isProcessing={isUploading} />
         </section>
@@ -149,11 +154,38 @@ export function FillFormPage() {
 
 
 /**
+ * Read an Excel file (.xlsx, .xls, .csv) and convert to structured text.
+ * Uses SheetJS to parse the spreadsheet client-side.
+ */
+async function readExcelAsText(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const lines: string[] = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+
+    // Convert sheet to array of arrays for better structure preservation
+    const rows = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: '' });
+
+    for (const row of rows) {
+      // Filter empty cells and join with tabs (preserves column structure)
+      const nonEmpty = (row as string[]).filter((cell) => String(cell).trim() !== '');
+      if (nonEmpty.length > 0) {
+        lines.push(nonEmpty.join('\t'));
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Try to read a file as text on the client side.
  * Works for text-based files (txt, csv). For PDFs/images returns null.
  */
 async function readFileAsText(file: File): Promise<string | null> {
-  // Only attempt for text-like types
   if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
     return file.text();
   }
